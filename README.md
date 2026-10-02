@@ -29,7 +29,7 @@ The phone page has everything except the watchlist. Its forecast history stays o
 
 Works on TrueNAS SCALE 24.10 (Electric Eel) or newer, where apps run on Docker.
 
-**1. Get the image.** Every push to this repo builds `ghcr.io/cakemasterjedi/hotel:latest` with GitHub Actions (`.github/workflows/docker.yml`). The package must be public so TrueNAS can download it without a login. If a pull fails with "unauthorized", go to GitHub → your profile → **Packages** → `hotel` → **Package settings** → **Change visibility** → Public.
+**1. Get the image.** Every push to this repo builds the image; pushes to `main` update `ghcr.io/cakemasterjedi/hotel:latest` with GitHub Actions (`.github/workflows/docker.yml`). The package must be public so TrueNAS can download it without a login. If a pull fails with "unauthorized", go to GitHub → your profile → **Packages** → `hotel` → **Package settings** → **Change visibility** → Public.
 
 **2. Make a dataset** for the app's data, e.g. `tank/apps/hotel-hunter`. In its permissions, give the **apps** user (UID 568) read/write access.
 

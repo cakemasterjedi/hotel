@@ -7,7 +7,6 @@ git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
 branch=$(git branch --show-current)
 [ -n "$branch" ] || exit 0                       # detached HEAD: nothing to push
-case "$branch" in main|master) exit 0 ;; esac    # never auto-push the main branch
 
 say() { printf '{"systemMessage": "%s"}\n' "$1"; }
 

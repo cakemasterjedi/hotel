@@ -15,7 +15,11 @@ const num = (v, d) => (v === undefined || v === '' || Number.isNaN(Number(v)) ? 
 export const config = {
   port: num(process.env.PORT, 3000),
   serpApiKey: process.env.SERPAPI_KEY || '',
-  demo: !process.env.SERPAPI_KEY || process.env.DEMO_MODE === 'true',
+  // Demo mode uses made-up data and never touches the network.
+  demo: process.env.DEMO_MODE === 'true',
+  // Free sources (no key needed) plus Google Hotels when SERPAPI_KEY is set.
+  sources: (process.env.SOURCES || 'super,booking,tripadvisor,google').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean),
+  currency: (process.env.CURRENCY || 'USD').toUpperCase(),
   dataDir: process.env.DATA_DIR || path.resolve('data'),
   // Optional basic auth so strangers on your domain can't burn your API credits.
   appUser: process.env.APP_USER || 'admin',

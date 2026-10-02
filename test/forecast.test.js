@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { forecastPrice } from '../src/forecast.js';
+import { forecastPrice } from '../src/shared/forecast.js';
 
 const DAY = 86_400_000;
 const now = Date.parse('2026-10-02T12:00:00Z');

@@ -8,4 +8,4 @@ COPY public ./public
 VOLUME /data
 EXPOSE 3000
 USER node
-CMD ["node", "--no-warnings=ExperimentalWarning", "src/server.js"]
+CMD ["node", "--no-warnings", "src/server.js"]

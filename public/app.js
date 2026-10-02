@@ -1,18 +1,24 @@
+import { haversineKm, formatDistance, KM_PER_MI } from './shared/geo.js';
+
 const $ = (sel, root = document) => root.querySelector(sel);
-const state = { hotels: [], stay: null, currency: 'USD', heat: new Map(), watched: new Set() };
+const state = {
+  hotels: [], stay: null, currency: 'USD', center: null, origin: null,
+  heat: new Map(), watched: new Set(), shown: 40,
+};
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const money = (n, digits = 0) => (n == null ? '—' : new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency, maximumFractionDigits: digits, minimumFractionDigits: digits }).format(n));
+const money = (n) => (n == null ? '—' : new Intl.NumberFormat(undefined, { style: 'currency', currency: state.currency, maximumFractionDigits: 0 }).format(n));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(`hh-${k}`); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(`hh-${k}`, JSON.stringify(v)); } catch { /* storage unavailable */ } },
+};
 
-async function api(path, opts) {
+async function api(path, body) {
+  const opts = body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : undefined;
   const res = await fetch(path, opts);
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
-  return body;
-}
-
-function qs(extra = {}) {
-  return new URLSearchParams({ ...state.stay, ...extra }).toString();
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
 }
 
 // ---------- setup ----------
@@ -23,19 +29,18 @@ form.checkIn.min = form.checkOut.min = iso(today);
 form.checkIn.value = iso(new Date(today.getTime() + 14 * 864e5));
 form.checkOut.value = iso(new Date(today.getTime() + 16 * 864e5));
 form.checkIn.addEventListener('change', () => {
-  if (form.checkOut.value <= form.checkIn.value) {
-    form.checkOut.value = iso(new Date(new Date(form.checkIn.value).getTime() + 864e5));
-  }
+  if (form.checkOut.value <= form.checkIn.value) form.checkOut.value = iso(new Date(new Date(form.checkIn.value).getTime() + 864e5));
 });
-
-try {
-  const saved = JSON.parse(localStorage.getItem('hh-last') || 'null');
-  if (saved?.q) form.q.value = saved.q;
-} catch { /* storage unavailable */ }
+form.q.value = store.get('q', '');
+state.origin = store.get('origin', null);
+$('#unit').value = store.get('unit', 'mi');
+for (const id of ['w-pool', 'w-hottub', 'w-heated']) $(`#${id}`).checked = store.get(id, $(`#${id}`).checked);
 
 api('/api/status').then((s) => {
   $('#demo-banner').hidden = !s.demo;
+  state.currency = s.currency || 'USD';
   $('#watch-interval').textContent = s.watchIntervalHours;
+  $('#sources').textContent = `Searches ${s.sources.join(', ')}.`;
 }).catch(() => {});
 
 document.querySelectorAll('.tab').forEach((btn) => btn.addEventListener('click', () => {
@@ -50,19 +55,23 @@ form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(form));
   state.stay = data;
-  state.currency = data.currency;
-  try { localStorage.setItem('hh-last', JSON.stringify({ q: data.q })); } catch { /* ignore */ }
+  store.set('q', data.q);
   const btn = form.querySelector('button[type=submit]');
   btn.disabled = true;
   btn.textContent = 'Searching…';
-  $('#results').innerHTML = '<p class="muted empty">Comparing prices across booking sites…</p>';
+  $('#results').innerHTML = '<p class="muted empty">Comparing prices on Super.com, Booking.com, Tripadvisor and more. This takes 10–30 seconds.</p>';
   $('#summary').textContent = '';
   try {
-    const res = await api(`/api/search?${qs()}`);
+    const res = await api(`/api/search?${new URLSearchParams(data)}`);
     state.hotels = res.hotels;
+    state.center = res.center;
     state.heat.clear();
+    state.shown = 40;
     $('#filters').hidden = false;
+    renderSources(res.status, res.cached);
+    renderOrigin();
     render();
+    fillCoordinates();
   } catch (err) {
     $('#results').innerHTML = `<p class="error empty">${esc(err.message)}</p>`;
   } finally {
@@ -71,36 +80,121 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-['#f-pool', '#f-hottub', '#f-heated', '#f-max', '#f-rating', '#f-stars', '#f-sort'].forEach((id) => $(id).addEventListener('input', render));
+function renderSources(status = [], cached) {
+  const parts = status.map((s) => (s.ok
+    ? `${esc(s.label)} <b>${s.count}</b>`
+    : `<span class="warn-text" title="${esc(s.error)}">${esc(s.label)} unavailable</span>`));
+  $('#sources').innerHTML = `Compared ${parts.join(' · ')}${cached ? ' · <span title="Saved results from the last few hours">cached</span>' : ''}`;
+}
+
+// Some sites (e.g. Super.com) don't give coordinates; look them up in the background.
+async function fillCoordinates() {
+  const missing = state.hotels.filter((h) => h.lat == null).slice(0, 120);
+  for (let i = 0; i < missing.length; i += 40) {
+    const chunk = missing.slice(i, i + 40);
+    try {
+      const found = await api('/api/coords', { center: state.center, hotels: chunk.map((h) => ({ key: h.key, name: [h.name, h.city].filter(Boolean).join(', ') })) });
+      for (const h of chunk) if (found[h.key]) Object.assign(h, found[h.key]);
+      render();
+    } catch { return; }
+  }
+}
+
+// ---------- distance origin ----------
+function originPoint() {
+  return state.origin || state.center;
+}
+
+function renderOrigin() {
+  const o = originPoint();
+  $('#origin-label').textContent = state.origin ? state.origin.name : o ? `${o.name || 'destination'} centre` : 'destination centre';
+}
+
+$('#origin-me').addEventListener('click', () => {
+  if (!navigator.geolocation || !window.isSecureContext) {
+    alert('Your browser only shares your location on secure (https) pages. Type your city instead.');
+    return;
+  }
+  $('#origin-label').textContent = 'Locating…';
+  navigator.geolocation.getCurrentPosition(
+    (pos) => setOrigin({ lat: pos.coords.latitude, lng: pos.coords.longitude, name: 'your location' }),
+    () => { renderOrigin(); alert('Couldn\'t get your location. Type a city instead.'); },
+    { timeout: 15000, maximumAge: 600000 },
+  );
+});
+
+$('#origin-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const q = $('#origin-q').value.trim();
+  if (!q) { setOrigin(null); return; }
+  $('#origin-label').textContent = 'Looking up…';
+  try {
+    setOrigin(await api(`/api/geocode?q=${encodeURIComponent(q)}`));
+    $('#origin-q').value = '';
+  } catch (err) {
+    renderOrigin();
+    alert(err.message);
+  }
+});
+
+function setOrigin(o) {
+  state.origin = o;
+  store.set('origin', o);
+  renderOrigin();
+  render();
+}
+
+$('#unit').addEventListener('change', () => { store.set('unit', $('#unit').value); render(); });
+
+// ---------- filtering, highlighting, sorting ----------
+['#f-sort', '#f-dist', '#f-max', '#f-rating', '#f-stars'].forEach((id) => $(id).addEventListener('input', () => { state.shown = 40; render(); }));
+['w-pool', 'w-hottub', 'w-heated'].forEach((id) => $(`#${id}`).addEventListener('change', () => { store.set(id, $(`#${id}`).checked); render(); }));
+
+function distanceKm(h) {
+  return h.lat == null ? null : haversineKm(originPoint(), { lat: h.lat, lng: h.lng });
+}
+
+function heatedState(h) {
+  const v = state.heat.get(h.key)?.pool?.status;
+  if (v === 'warm') return 'yes';
+  if (v === 'cold') return 'no';
+  return h.features.heatedPoolListed ? 'yes' : 'unknown';
+}
+
+// Which of the wanted perks this hotel has.
+function perks(h) {
+  const want = { pool: $('#w-pool').checked, hotTub: $('#w-hottub').checked, heated: $('#w-heated').checked };
+  const has = [];
+  const missing = [];
+  if (want.pool) (h.features.pool ? has : missing).push('pool');
+  if (want.hotTub) (h.features.hotTub ? has : missing).push('hot tub');
+  if (want.heated) (heatedState(h) === 'yes' ? has : missing).push('heated pool');
+  const wanted = has.length + missing.length;
+  return { has, missing, level: !wanted || !has.length ? 0 : missing.length ? 1 : 2 };
+}
 
 function filtered() {
-  const pool = $('#f-pool').value;
-  const hotTub = $('#f-hottub').checked;
-  const heated = $('#f-heated').checked;
+  const unit = $('#unit').value;
+  const maxDist = Number($('#f-dist').value) * (unit === 'km' ? 1 : KM_PER_MI);
   const max = Number($('#f-max').value) || Infinity;
   const minRating = Number($('#f-rating').value);
   const minStars = Number($('#f-stars').value);
   const sort = $('#f-sort').value;
-
   const list = state.hotels.filter((h) => {
-    const f = h.features;
-    if (!h.best) return false;
-    if (pool === 'pool' && !f.pool) return false;
-    if (pool === 'indoor' && !f.indoorPool) return false;
-    if (pool === 'outdoor' && !f.outdoorPool) return false;
-    if (hotTub && !f.hotTub) return false;
-    if (heated) {
-      const verdict = state.heat.get(h.token)?.pool?.status;
-      if (!(verdict === 'warm' || (!verdict && f.heatedPoolListed))) return false;
-    }
-    if (h.best.nightly > max) return false;
+    if (!h.best || h.best.nightly > max) return false;
     if ((h.rating || 0) < minRating) return false;
-    if ((h.hotelClass || 0) < minStars) return false;
+    if ((h.stars || 0) < minStars) return false;
+    if (maxDist) {
+      const d = distanceKm(h);
+      if (d != null && d > maxDist) return false;
+    }
     return true;
   });
+  const dist = (h) => distanceKm(h) ?? Infinity;
   const by = {
     total: (a, b) => a.best.total - b.best.total,
     nightly: (a, b) => a.best.nightly - b.best.nightly,
+    distance: (a, b) => dist(a) - dist(b),
     rating: (a, b) => (b.rating || 0) - (a.rating || 0),
     value: (a, b) => (b.rating || 0) / b.best.nightly - (a.rating || 0) / a.best.nightly,
   };
@@ -108,72 +202,95 @@ function filtered() {
 }
 
 function render() {
+  if (!state.hotels.length) return;
   const list = filtered();
   const nights = state.hotels[0]?.nights || 1;
-  const heatedOn = $('#f-heated').checked;
+  const matches = list.filter((h) => perks(h).level === 2).length;
   $('#summary').innerHTML = `${list.length} of ${state.hotels.length} hotels · ${nights} night${nights > 1 ? 's' : ''}`
-    + (heatedOn ? ' · <em>Heated filter only shows hotels whose reviews have been checked (or that list a heated pool)</em>' : '');
+    + (matches ? ` · <span class="match-text">${matches} have everything you highlighted</span>` : '');
   const root = $('#results');
   root.innerHTML = '';
   if (!list.length) {
     root.innerHTML = '<p class="muted empty">No hotels match these filters.</p>';
     return;
   }
-  for (const h of list) root.append(hotelCard(h));
-}
-
-function stars(n) {
-  return n ? '★'.repeat(n) : '';
+  for (const h of list.slice(0, state.shown)) root.append(hotelCard(h));
+  if (list.length > state.shown) {
+    const more = document.createElement('button');
+    more.className = 'secondary more';
+    more.textContent = `Show ${Math.min(40, list.length - state.shown)} more`;
+    more.addEventListener('click', () => { state.shown += 40; render(); });
+    root.append(more);
+  }
 }
 
 function hotelCard(h) {
   const el = $('#hotel-tpl').content.firstElementChild.cloneNode(true);
-  el.dataset.token = h.token;
+  el.dataset.key = h.key;
   const thumb = $('.thumb', el);
   if (h.image) thumb.style.backgroundImage = `url("${encodeURI(h.image)}")`;
-  else thumb.textContent = '🏨';
+  else { thumb.textContent = '🏨'; thumb.classList.add('empty'); }
 
   $('.name', el).innerHTML = h.link ? `<a href="${esc(h.link)}" target="_blank" rel="noopener">${esc(h.name)}</a>` : esc(h.name);
+  const d = distanceKm(h);
+  const o = originPoint();
   $('.meta', el).innerHTML = [
-    h.hotelClass ? `<span title="${h.hotelClass}-star">${stars(h.hotelClass)}</span>` : '',
-    h.rating ? `<b>${h.rating}</b>/5 (${h.reviewCount.toLocaleString()} reviews)` : '',
+    h.stars ? `<span title="${h.stars}-star">${'★'.repeat(h.stars)}</span>` : '',
+    h.rating ? `<b>${h.rating}</b>/5${h.reviewCount ? ` (${h.reviewCount.toLocaleString()} reviews)` : ''}` : '',
+    d != null ? `📍 ${formatDistance(d, $('#unit').value)} from ${esc(state.origin ? state.origin.name : 'centre')}` : (o ? '<span title="This site didn\'t give a location">📍 distance unknown</span>' : ''),
   ].filter(Boolean).join(' · ');
 
-  $('.nightly', el).innerHTML = `${money(h.best.nightly)} <small>/ night</small>`;
-  $('.total', el).innerHTML = `${money(h.best.total)} <small>total · ${h.nights} night${h.nights > 1 ? 's' : ''}</small>`;
-  $('.where', el).textContent = `cheapest on ${h.best.source}${h.offers.length > 1 ? ` · ${h.offers.length} sites listed` : ''}`;
-
+  renderPrice(el, h);
+  renderPerks(el, h);
   renderBadges(el, h);
   renderForecast($('.forecast', el), h.forecast);
 
   const btnPrices = $('.act-prices', el);
   btnPrices.addEventListener('click', () => togglePrices(el, h, btnPrices));
   const btnHeat = $('.act-heat', el);
-  if (!h.features.pool && !h.features.hotTub) btnHeat.hidden = true;
+  if (h.features.amenitiesKnown && !h.features.pool && !h.features.hotTub) btnHeat.hidden = true;
   btnHeat.addEventListener('click', () => toggleHeat(el, h, btnHeat));
-  if (state.heat.has(h.token)) renderHeat(el, h, state.heat.get(h.token));
+  if (state.heat.has(h.key)) renderHeat(el, h, state.heat.get(h.key));
   const btnWatch = $('.act-watch', el);
-  if (state.watched.has(h.token)) btnWatch.textContent = '★ Watching';
+  if (state.watched.has(h.key)) btnWatch.textContent = '★ Watching';
   btnWatch.addEventListener('click', () => watch(h, btnWatch));
   return el;
 }
 
+function renderPrice(el, h) {
+  $('.nightly', el).innerHTML = `${money(h.best.nightly)} <small>/ night</small>`;
+  $('.total', el).innerHTML = `${money(h.best.total)} <small>total · ${h.nights} night${h.nights > 1 ? 's' : ''}</small>`;
+  const tax = h.best.taxIncluded === false ? ' · + tax' : '';
+  $('.where', el).textContent = `cheapest on ${h.best.source}${tax} · ${h.offers.length} site${h.offers.length > 1 ? 's' : ''}`;
+}
+
+function renderPerks(el, h) {
+  const p = perks(h);
+  el.classList.toggle('match-full', p.level === 2);
+  el.classList.toggle('match-some', p.level === 1);
+  const ribbon = $('.ribbon', el);
+  ribbon.hidden = !p.level;
+  if (p.level === 2) ribbon.textContent = `✓ Has ${p.has.join(' + ')}`;
+  else if (p.level === 1) ribbon.textContent = `Has ${p.has.join(' + ')} · no ${p.missing.join(' / ')} listed`;
+}
+
 function renderBadges(el, h) {
   const f = h.features;
-  const heat = state.heat.get(h.token);
+  const heat = state.heat.get(h.key);
   const b = [];
-  if (f.indoorPool) b.push(['🏊 Indoor pool', '']);
-  if (f.outdoorPool) b.push(['🏊 Outdoor pool', '']);
-  if (f.pool && !f.indoorPool && !f.outdoorPool) b.push(['🏊 Pool', '']);
-  if (f.hotTub) b.push(['♨️ Hot tub', '']);
-  if (f.heatedPoolListed) b.push(['Heated pool (listed)', 'good']);
+  if (f.indoorPool) b.push(['🏊 Indoor pool', 'perk']);
+  if (f.outdoorPool) b.push(['🏊 Outdoor pool', 'perk']);
+  if (f.pool && !f.indoorPool && !f.outdoorPool) b.push(['🏊 Pool', 'perk']);
+  if (f.hotTub) b.push(['♨️ Hot tub', 'perk']);
+  if (f.heatedPoolListed) b.push(['🔥 Heated pool (listed)', 'good']);
   if (heat) {
     const cls = { warm: 'good', cold: 'bad', mixed: 'warn' };
     if (heat.pool.status !== 'unknown') b.push([`Pool: ${heat.pool.label}`, cls[heat.pool.status]]);
     if (heat.hotTub.status !== 'unknown') b.push([`Hot tub: ${heat.hotTub.label}`, cls[heat.hotTub.status]]);
   }
   if (h.best.freeCancellation) b.push(['Free cancellation', 'good']);
-  if (!f.pool && !f.hotTub) b.push(['No pool or hot tub listed', '']);
+  if (!f.amenitiesKnown) b.push(['Amenities not listed — check “Compare all sites”', '']);
+  for (const s of h.sources) b.push([s, 'src']);
   $('.badges', el).innerHTML = b.map(([t, c]) => `<span class="badge ${c}">${esc(t)}</span>`).join('');
 }
 
@@ -187,33 +304,33 @@ function renderForecast(box, fc) {
     <span>${fc.chanceUpInAWeek}% chance higher in 7 days</span>
     <span class="advice"><b>${esc(fc.advice)}</b></span>
     <details><summary>Why? (confidence: ${fc.confidence})</summary><ul>${fc.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
-    Estimates are statistical guesses, not guarantees. High = 90th-percentile scenario.</details>`;
+    Estimates are statistical guesses, not guarantees. "Up to" is the 90th-percentile scenario.</details>`;
 }
 
 // ---------- per-site prices ----------
+const taxLabel = (o) => (o.taxIncluded === true ? 'incl. tax' : o.taxIncluded === false ? '+ tax' : 'tax may apply');
+
 async function togglePrices(el, h, btn) {
   const panel = $('.panel-prices', el);
   if (!panel.hidden) { panel.hidden = true; return; }
   panel.hidden = false;
-  panel.innerHTML = '<p class="muted">Loading every site\'s price…</p>';
+  panel.innerHTML = '<p class="muted">Checking every site\'s price…</p>';
   btn.disabled = true;
   try {
-    const d = await api(`/api/hotel/${encodeURIComponent(h.token)}/prices?${qs()}`);
+    const d = await api('/api/hotel/prices', { stay: state.stay, hotel: h });
     Object.assign(h, { best: d.best, offers: d.offers, forecast: d.forecast });
+    renderPrice(el, h);
     renderForecast($('.forecast', el), d.forecast);
-    $('.nightly', el).innerHTML = `${money(d.best.nightly)} <small>/ night</small>`;
-    $('.total', el).innerHTML = `${money(d.best.total)} <small>total · ${d.nights} night${d.nights > 1 ? 's' : ''}</small>`;
-    $('.where', el).textContent = `cheapest on ${d.best.source} · ${d.offers.length} sites compared`;
-    if (!d.offers.length) { panel.innerHTML = '<p class="muted">No per-site prices available.</p>'; return; }
     panel.innerHTML = `<div class="table-scroll"><table>
-      <thead><tr><th>Site</th><th class="num">Per night</th><th class="num">Total</th><th class="num col-tax">Before taxes</th><th></th></tr></thead>
+      <thead><tr><th>Site</th><th class="num">Per night</th><th class="num">Total</th><th class="col-tax">Taxes</th><th></th></tr></thead>
       <tbody>${d.offers.map((o, i) => `<tr class="${i === 0 ? 'best' : ''}">
-        <td>${esc(o.source)}${o.freeCancellation ? ' <span class="badge good">free cancel</span>' : ''}</td>
+        <td>${esc(o.source)}${o.via ? ` <span class="muted">via ${esc(o.via)}</span>` : ''}${o.freeCancellation ? ' <span class="badge good">free cancel</span>' : ''}</td>
         <td class="num">${money(o.nightly)}</td>
-        <td class="num">${money(o.total)}</td>
-        <td class="num muted col-tax">${o.totalBeforeTax != null ? money(o.totalBeforeTax) : '—'}</td>
+        <td class="num">${money(o.total)}<div class="tax-inline muted">${taxLabel(o)}</div></td>
+        <td class="muted col-tax">${taxLabel(o)}</td>
         <td>${o.link ? `<a href="${esc(o.link)}" target="_blank" rel="noopener">Book →</a>` : ''}</td>
-      </tr>`).join('')}</tbody></table></div>`;
+      </tr>`).join('')}</tbody></table></div>
+      <p class="muted small-text">Sites show taxes differently, so compare the “Taxes” column too.${d.errors?.length ? ` Some sites didn't answer: ${esc(d.errors.join('; '))}` : ''}</p>`;
   } catch (err) {
     panel.innerHTML = `<p class="error">${esc(err.message)}</p>`;
   } finally {
@@ -223,17 +340,17 @@ async function togglePrices(el, h, btn) {
 
 // ---------- pool heat ----------
 async function fetchHeat(h) {
-  if (state.heat.has(h.token)) return state.heat.get(h.token);
-  const d = await api(`/api/hotel/${encodeURIComponent(h.token)}/heat?heatedListed=${h.features.heatedPoolListed ? 1 : 0}`);
-  state.heat.set(h.token, d);
+  if (state.heat.has(h.key)) return state.heat.get(h.key);
+  const d = await api('/api/hotel/heat', { stay: state.stay, hotel: h });
+  state.heat.set(h.key, d);
   return d;
 }
 
 async function toggleHeat(el, h, btn) {
   const panel = $('.panel-heat', el);
-  if (!panel.hidden && state.heat.has(h.token)) { panel.hidden = true; return; }
+  if (!panel.hidden && state.heat.has(h.key)) { panel.hidden = true; return; }
   panel.hidden = false;
-  panel.innerHTML = '<p class="muted">Reading reviews for water-temperature mentions…</p>';
+  panel.innerHTML = '<p class="muted">Reading guest reviews for water-temperature mentions…</p>';
   btn.disabled = true;
   try {
     renderHeat(el, h, await fetchHeat(h));
@@ -246,32 +363,39 @@ async function toggleHeat(el, h, btn) {
 
 function heatBlock(title, v) {
   const quotes = v.evidence.map((e) => `<div class="quote ${e.sentiment}">“${esc(e.quote)}”${e.date ? ` <span class="muted">— ${esc(e.date)}</span>` : ''}</div>`).join('');
-  const counts = v.warm + v.cold ? `${v.warm} warm vs ${v.cold} cold mention${v.warm + v.cold > 1 ? 's' : ''} · confidence ${v.confidence}` : `${v.mentions} review${v.mentions === 1 ? '' : 's'} mention it, none mention temperature`;
+  const counts = v.warm + v.cold
+    ? `${v.warm} warm vs ${v.cold} cold mention${v.warm + v.cold > 1 ? 's' : ''} · confidence ${v.confidence}`
+    : `${v.mentions} review${v.mentions === 1 ? '' : 's'} mention it, none mention temperature`;
   return `<div><h4>${title}: ${esc(v.label)}</h4><div class="muted">${counts}</div>${quotes}</div>`;
 }
 
 function renderHeat(el, h, d) {
   const panel = $('.panel-heat', el);
   panel.hidden = false;
-  const blocks = [];
-  if (h.features.pool || d.pool.mentions) blocks.push(heatBlock('🏊 Pool', d.pool));
-  if (h.features.hotTub || d.hotTub.mentions) blocks.push(heatBlock('♨️ Hot tub', d.hotTub));
-  panel.innerHTML = `<div class="heat-grid">${blocks.join('')}</div>
-    <p class="muted">Based on ${d.reviewsAnalyzed} recent reviews${d.pool.listedHeated ? ' plus the listing saying “heated pool”' : ''}. Outdoor pools are often only heated seasonally.</p>`;
+  panel.innerHTML = `<div class="heat-grid">${heatBlock('🏊 Pool', d.pool)}${heatBlock('♨️ Hot tub', d.hotTub)}</div>
+    ${d.bookingAnswer ? `<div class="answer"><b>Booking.com's answer:</b> ${esc(d.bookingAnswer)}</div>` : ''}
+    ${d.summary ? `<div class="answer"><b>Tripadvisor review summary:</b> ${esc(d.summary)}</div>` : ''}
+    <p class="muted small-text">Based on ${d.reviewsAnalyzed} recent reviews${d.pool.listedHeated ? ' and the listing saying “heated pool”' : ''}. Outdoor pools are often only heated in some seasons, so check the review dates.</p>`;
   renderBadges(el, h);
+  renderPerks(el, h);
 }
 
 $('#bulk-heat').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
-  const targets = filtered().filter((h) => (h.features.pool || h.features.hotTub) && !state.heat.has(h.token)).slice(0, 10);
+  const targets = filtered().filter((h) => (h.features.pool || h.features.hotTub) && !state.heat.has(h.key)).slice(0, 10);
   if (!targets.length) return;
   btn.disabled = true;
   let done = 0;
   btn.textContent = `Checking 0/${targets.length}…`;
-  await Promise.all(targets.map(async (h) => {
-    try { await fetchHeat(h); } catch { /* shown per-hotel on demand */ }
-    btn.textContent = `Checking ${++done}/${targets.length}…`;
-  }));
+  // Two at a time to stay gentle on the review sites.
+  const queue = [...targets];
+  const worker = async () => {
+    for (let h; (h = queue.shift());) {
+      try { await fetchHeat(h); } catch { /* shown per hotel on demand */ }
+      btn.textContent = `Checking ${++done}/${targets.length}…`;
+    }
+  };
+  await Promise.all([worker(), worker()]);
   btn.disabled = false;
   btn.textContent = 'Check pool heat for top 10';
   render();
@@ -280,12 +404,8 @@ $('#bulk-heat').addEventListener('click', async (e) => {
 // ---------- watchlist ----------
 async function watch(h, btn) {
   try {
-    await api('/api/watches', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...state.stay, token: h.token, name: h.name }),
-    });
-    state.watched.add(h.token);
+    await api('/api/watches', { stay: state.stay, hotel: h });
+    state.watched.add(h.key);
     btn.textContent = '★ Watching';
     refreshWatchCount();
   } catch (err) {
@@ -310,23 +430,22 @@ async function loadWatches() {
   const root = $('#watchlist');
   try {
     const rows = await api('/api/watches');
-    state.watched = new Set(rows.map((w) => w.property_token));
+    state.watched = new Set(rows.map((w) => w.key));
     $('#watch-count').textContent = rows.length ? `(${rows.length})` : '';
     if (!rows.length) { root.innerHTML = '<p class="muted empty">Nothing watched yet. Click “☆ Watch price” on a hotel.</p>'; return; }
     root.innerHTML = rows.map((w) => {
       const last = w.history.at(-1);
       const first = w.history[0];
-      const change = last && first && first.nightly ? ((last.nightly - first.nightly) / first.nightly) * 100 : 0;
-      const cur = new Intl.NumberFormat(undefined, { style: 'currency', currency: w.currency, maximumFractionDigits: 0 });
+      const change = last && first?.nightly ? ((last.nightly - first.nightly) / first.nightly) * 100 : 0;
       return `<div class="card watch">
-        <div><b>${esc(w.name)}</b><div class="muted">${esc(w.check_in)} → ${esc(w.check_out)} · ${w.adults} adults</div></div>
+        <div><b>${esc(w.name)}</b><div class="muted">${esc(w.checkIn)} → ${esc(w.checkOut)} · ${w.adults} adults</div></div>
         ${sparkline(w.history)}
-        <div class="price">${last ? `<div class="nightly">${cur.format(last.nightly)} <small>/ night</small></div><div class="where">${last.total ? `${cur.format(last.total)} total · ` : ''}${change ? `${change > 0 ? '+' : ''}${change.toFixed(1)}% since watching` : 'no change yet'}</div>` : '<span class="muted">pending</span>'}</div>
+        <div class="price">${last ? `<div class="nightly">${money(last.nightly)} <small>/ night</small></div><div class="where">${last.total ? `${money(last.total)} total · ` : ''}${last.source ? `${esc(last.source)} · ` : ''}${change ? `${change > 0 ? '+' : ''}${change.toFixed(1)}% since watching` : 'no change yet'}</div>` : '<span class="muted">pending</span>'}</div>
         <button class="secondary" data-del="${w.id}">Remove</button>
       </div>`;
     }).join('');
     root.querySelectorAll('[data-del]').forEach((b) => b.addEventListener('click', async () => {
-      await api(`/api/watches/${b.dataset.del}`, { method: 'DELETE' });
+      await fetch(`/api/watches/${b.dataset.del}`, { method: 'DELETE' });
       loadWatches();
     }));
   } catch (err) {
@@ -337,7 +456,7 @@ async function loadWatches() {
 async function refreshWatchCount() {
   try {
     const rows = await api('/api/watches');
-    state.watched = new Set(rows.map((w) => w.property_token));
+    state.watched = new Set(rows.map((w) => w.key));
     $('#watch-count').textContent = rows.length ? `(${rows.length})` : '';
   } catch { /* ignore */ }
 }

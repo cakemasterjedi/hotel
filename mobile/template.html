@@ -1,0 +1,537 @@
+<title>Hotel Hunter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one narrow column built for a phone held in one hand; search sheet on top, results as a stack of "pool tile" cards. */
+:root {
+  --bg: #eef4f5;
+  --surface: #ffffff;
+  --ink: #142028;
+  --muted: #5b6b74;
+  --line: #d5e1e4;
+  --water: #0b7a8a;          /* accent: pool-water teal */
+  --water-soft: #d9f0f2;
+  --water-ink: #ffffff;
+  --sun: #b4570f;            /* warm accent for "heated" */
+  --sun-soft: #fbe9da;
+  --good: #1d7a45; --good-soft: #def3e6;
+  --bad: #b23a30;  --bad-soft: #fbe3e0;
+  --warn: #8a6200; --warn-soft: #fbf0d3;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1518; --surface: #13222a; --ink: #e4eef0; --muted: #93a7ae; --line: #24363e;
+    --water: #3cc3d1; --water-soft: #12333a; --water-ink: #06161a;
+    --sun: #f39b52; --sun-soft: #3a2616;
+    --good: #6fd69a; --good-soft: #15301f; --bad: #ff8e83; --bad-soft: #3a1c19; --warn: #f0c35b; --warn-soft: #362b12;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1518; --surface: #13222a; --ink: #e4eef0; --muted: #93a7ae; --line: #24363e;
+  --water: #3cc3d1; --water-soft: #12333a; --water-ink: #06161a;
+  --sun: #f39b52; --sun-soft: #3a2616;
+  --good: #6fd69a; --good-soft: #15301f; --bad: #ff8e83; --bad-soft: #3a1c19; --warn: #f0c35b; --warn-soft: #362b12;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.45 var(--font-body); padding-inline: 16px; padding-block: 0 48px; }
+.wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 14px; }
+header { padding-block: 18px 2px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font: 800 26px/1 var(--font-display); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+h1 span { color: var(--water); }
+.tag { font-size: 12px; color: var(--muted); }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.grid .full { grid-column: 1 / -1; }
+label.f { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
+input, select { font: 500 16px var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px 11px; width: 100%; min-width: 0; }
+input:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid var(--water); outline-offset: 1px; }
+button { font: 600 15px var(--font-body); border-radius: 10px; padding: 10px 14px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+button.go { background: var(--water); border-color: var(--water); color: var(--water-ink); font-size: 16px; padding: 12px; }
+button:disabled { opacity: .6; cursor: progress; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row-label { font-size: 12px; font-weight: 600; color: var(--muted); width: 100%; letter-spacing: 0.02em; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; font-weight: 600; font-size: 14px; cursor: pointer; user-select: none; }
+.chip input { width: auto; accent-color: var(--water); }
+.chip:has(input:checked) { border-color: var(--water); background: var(--water-soft); }
+.chip.sun:has(input:checked) { border-color: var(--sun); background: var(--sun-soft); }
+.origin-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; }
+.status { font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+.status .bad { color: var(--bad); }
+.status .warn { color: var(--warn); }
+.note { font-size: 13px; color: var(--muted); }
+.banner { background: var(--warn-soft); color: var(--warn); border-radius: var(--radius); padding: 10px 12px; font-size: 14px; }
+.example { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.summary { font-size: 14px; color: var(--muted); }
+.summary b { color: var(--water); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 10px; }
+.card.full { border: 2px solid var(--water); box-shadow: 0 0 0 4px var(--water-soft); }
+.card.some { border-style: dashed; border-color: var(--water); }
+.ribbon { justify-self: start; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--water); color: var(--water-ink); }
+.card.some .ribbon { background: var(--water-soft); color: var(--water); }
+.top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+.name { font: 700 17px/1.25 var(--font-display); margin: 0; text-wrap: balance; }
+.name a { color: inherit; text-decoration: none; }
+.meta { font-size: 13px; color: var(--muted); }
+.price { text-align: right; font-variant-numeric: tabular-nums; }
+.nightly { font: 800 24px/1 var(--font-display); }
+.nightly small, .total small { font: 500 12px var(--font-body); color: var(--muted); }
+.total { font-weight: 700; margin-top: 3px; }
+.where { font-size: 12px; color: var(--muted); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.b { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--bg); color: var(--muted); }
+.b.perk { background: var(--water-soft); color: var(--water); }
+.b.heat { background: var(--sun-soft); color: var(--sun); }
+.b.good { background: var(--good-soft); color: var(--good); }
+.b.bad { background: var(--bad-soft); color: var(--bad); }
+.b.warn { background: var(--warn-soft); color: var(--warn); }
+.b.src { background: none; border: 1px solid var(--line); font-weight: 500; }
+.fc { font-size: 13px; background: var(--bg); border-radius: 10px; padding: 9px 10px; display: grid; gap: 3px; font-variant-numeric: tabular-nums; }
+.fc details { color: var(--muted); }
+.fc ul { margin: 4px 0; padding-left: 18px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions button { font-size: 13px; padding: 8px 11px; }
+.panel { border-top: 1px solid var(--line); padding-top: 10px; font-size: 14px; display: grid; gap: 8px; }
+.tbl { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+tr.best td { font-weight: 700; }
+td small { display: block; color: var(--muted); font-weight: 400; font-size: 11px; }
+a { color: var(--water); }
+.heat-grid { display: grid; gap: 10px; }
+.heat-grid h4 { margin: 0; font: 700 15px var(--font-display); }
+.q { font-size: 13px; padding-left: 9px; border-left: 3px solid var(--line); margin-top: 5px; }
+.q.warm { border-color: var(--sun); }
+.q.cold { border-color: var(--water); }
+.answer { font-size: 13px; background: var(--bg); padding: 8px 10px; border-radius: 10px; }
+.err { color: var(--bad); font-size: 14px; }
+.more { justify-self: center; }
+@media (min-width: 560px) { .grid { grid-template-columns: 2fr 1fr 1fr; } .grid .half { grid-column: span 1; } }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .2s, box-shadow .2s; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Hotel <span>Hunter</span></h1>
+    <span class="tag">Super.com · Booking.com · Tripadvisor</span>
+  </header>
+
+  <div id="page-banner" class="banner" hidden></div>
+
+  <form id="search" class="sheet" autocomplete="off">
+    <div class="grid">
+      <label class="f full">Destination <input id="q" required placeholder="City, e.g. Scottsdale, AZ"></label>
+      <label class="f">Check-in <input id="checkIn" type="date" required></label>
+      <label class="f">Check-out <input id="checkOut" type="date" required></label>
+      <label class="f">Adults <input id="adults" type="number" min="1" max="10" value="2" inputmode="numeric"></label>
+      <label class="f">Kids <input id="children" type="number" min="0" max="10" value="0" inputmode="numeric"></label>
+    </div>
+    <button class="go" type="submit" id="go">Search all sites</button>
+    <div id="status" class="status" aria-live="polite"></div>
+  </form>
+
+  <section class="sheet" aria-label="Preferences">
+    <div class="row">
+      <span class="row-label">Highlight hotels with</span>
+      <label class="chip"><input type="checkbox" id="w-pool" checked> Pool</label>
+      <label class="chip"><input type="checkbox" id="w-hottub" checked> Hot tub</label>
+      <label class="chip sun"><input type="checkbox" id="w-heated"> Heated pool</label>
+    </div>
+    <div class="row">
+      <span class="row-label">Distance from <span id="origin-label">the destination centre</span></span>
+      <form id="origin" class="origin-row" style="width:100%">
+        <input id="origin-q" placeholder="Your city or address" aria-label="Measure distance from">
+        <button type="submit">Set</button>
+        <select id="unit" aria-label="Distance unit"><option value="mi">mi</option><option value="km">km</option></select>
+      </form>
+    </div>
+    <div class="grid">
+      <label class="f">Sort by
+        <select id="sort">
+          <option value="total">Total price</option>
+          <option value="nightly">Price per night</option>
+          <option value="distance">Distance</option>
+          <option value="rating">Guest rating</option>
+        </select>
+      </label>
+      <label class="f">Max / night <input id="max" type="number" min="0" inputmode="numeric" placeholder="Any"></label>
+      <label class="f">Max distance
+        <select id="maxdist"><option value="0">Any</option><option value="5">5</option><option value="10">10</option><option value="25">25</option><option value="50">50</option></select>
+      </label>
+    </div>
+  </section>
+
+  <div id="summary" class="summary"></div>
+  <div id="results" class="wrap" style="gap:12px"></div>
+  <p class="note">Prices come live from each site; taxes are shown differently by each, so check the tax note under each price. “If you wait” figures are statistical estimates, not guarantees. Uses your Super.com, Booking.com and Tripadvisor connectors (Settings → Connectors in claude.ai; free, no login).</p>
+</div>
+
+<script>
+/*__SHARED__*/
+const EXAMPLE = /*__EXAMPLE__*/null;
+
+(() => {
+  const { merge, addOffers, nightsBetween, hotelKey } = __merge;
+  const { haversineKm, formatDistance, KM_PER_MI } = __geo;
+  const { searchSuper, searchBooking, searchTripadvisor, tripadvisorDetails, tripadvisorGeocode, tripadvisorVersion, superLowest, bookingAnswer, HEAT_QUESTION, SOURCE_INFO } = __sources;
+  const { analyzeReviews } = __poolHeat;
+  const { forecastPrice } = __forecast;
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = (n) => (n == null ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n));
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('hh-' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('hh-' + k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
+  };
+
+  const S = { mcp: null, perms: null, taVersion: null, hotels: [], stay: null, center: null, origin: store.get('origin', null), heat: new Map(), shown: 25, example: false };
+
+  // ---------- connector calls ----------
+  const SERVERS = ['super', 'booking', 'tripadvisor'];
+  const FIX = {
+    server_not_connected: (s) => `Add the ${s} connector in claude.ai → Settings → Connectors (free, no login), then search again.`,
+    selection_required: (s) => `Choose which ${s} connector to use when claude.ai asks, then search again.`,
+    needs_reauth: (s) => `Reconnect ${s} in claude.ai → Settings → Connectors.`,
+    not_in_manifest: (s) => `${s} is turned off for this page. Turn it back on from the page's permissions menu.`,
+    blocked_by_policy: (s) => `Your organization blocks ${s}.`,
+    approval_required: (s) => `${s} needs approval from your organization.`,
+    server_unavailable: (s) => `${s} didn't answer in time. Try the search again in a minute.`,
+    consent_required: (s) => `Allow ${s} for this page to include its prices.`,
+  };
+  const explain = (err, label) => (FIX[err?.code] ? FIX[err.code](label) : `${label}: ${err?.message || 'request failed'}`);
+
+  function caller(id) {
+    const server = SOURCE_INFO[id].server;
+    return async (tool, input) => {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const r = await S.mcp.callTool(server, tool, input);
+          return r.payload;
+        } catch (err) {
+          if (err?.retryable && attempt === 0) {
+            await new Promise((res) => setTimeout(res, (err.retryAfterMs || 1200) + Math.random() * 800));
+            continue;
+          }
+          throw err;
+        }
+      }
+    };
+  }
+
+  async function taVersion() {
+    if (S.taVersion) return S.taVersion;
+    try { S.taVersion = tripadvisorVersion((await S.mcp.describeTool('Tripadvisor', 'search_hotels')).inputSchema); } catch { S.taVersion = undefined; }
+    return S.taVersion;
+  }
+
+  // ---------- setup ----------
+  const iso = (d) => d.toISOString().slice(0, 10);
+  const now = new Date();
+  $('#checkIn').min = $('#checkOut').min = iso(now);
+  $('#checkIn').value = iso(new Date(now.getTime() + 14 * 864e5));
+  $('#checkOut').value = iso(new Date(now.getTime() + 16 * 864e5));
+  $('#checkIn').addEventListener('change', () => {
+    if ($('#checkOut').value <= $('#checkIn').value) $('#checkOut').value = iso(new Date(new Date($('#checkIn').value).getTime() + 864e5));
+  });
+  $('#q').value = store.get('q', '');
+  $('#unit').value = store.get('unit', 'mi');
+  for (const id of ['w-pool', 'w-hottub', 'w-heated']) $('#' + id).checked = store.get(id, $('#' + id).checked);
+  renderOrigin();
+
+  (async () => {
+    S.mcp = window.claude?.use ? await window.claude.use('mcp') : null;
+    S.perms = window.claude?.use ? await window.claude.use('permissions') : null;
+    if (!S.mcp) {
+      const b = $('#page-banner');
+      b.hidden = false;
+      b.textContent = 'Live search needs this page open in claude.ai while signed in. The results below are an example.';
+    }
+  })();
+
+  // ---------- search ----------
+  $('#search').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!S.mcp) { $('#status').innerHTML = '<span class="bad">Open this page in claude.ai (signed in) to search live prices.</span>'; return; }
+    const stay = { q: $('#q').value.trim(), checkIn: $('#checkIn').value, checkOut: $('#checkOut').value, adults: Number($('#adults').value) || 2, children: Number($('#children').value) || 0, currency: 'USD' };
+    if (stay.checkOut <= stay.checkIn) { $('#status').innerHTML = '<span class="bad">Check-out must be after check-in.</span>'; return; }
+    store.set('q', stay.q);
+    const btn = $('#go');
+    btn.disabled = true;
+    btn.textContent = 'Searching… (10–30 s)';
+    $('#status').textContent = 'Asking Super.com, Booking.com and Tripadvisor…';
+    try {
+      if (S.perms) await S.perms.request(SERVERS.map((id) => 'mcp:' + SOURCE_INFO[id].server)).catch(() => {});
+      const version = await taVersion();
+      const jobs = [
+        searchSuper(caller('super'), stay),
+        searchBooking(caller('booking'), stay),
+        searchTripadvisor(caller('tripadvisor'), stay, { version }),
+      ];
+      const settled = await Promise.allSettled(jobs);
+      const listings = [];
+      const lines = [];
+      settled.forEach((r, i) => {
+        const label = SOURCE_INFO[SERVERS[i]].label;
+        if (r.status === 'rejected') { lines.push(`<span class="${r.reason?.code === 'server_not_connected' ? 'warn' : 'bad'}">${esc(explain(r.reason, label))}</span>`); return; }
+        const list = SERVERS[i] === 'tripadvisor' ? r.value.listings : r.value;
+        if (SERVERS[i] === 'tripadvisor') S.center = r.value.center || S.center;
+        listings.push(...list);
+        lines.unshift(`${esc(label)}: <b>${list.length}</b> hotels`);
+      });
+      const nights = nightsBetween(stay.checkIn, stay.checkOut);
+      const hotels = merge(listings, nights).filter((h) => h.best);
+      if (!hotels.length && settled.every((r) => r.status === 'rejected')) {
+        $('#status').innerHTML = lines.map((l) => `<div>${l}</div>`).join('');
+        return;
+      }
+      for (const h of hotels) snapshot(h, stay);
+      S.example = false;
+      S.stay = stay;
+      S.hotels = hotels.map((h) => withForecast(h, stay));
+      S.heat.clear();
+      S.shown = 25;
+      $('#status').innerHTML = lines.map((l) => `<div>${l}</div>`).join('');
+      renderOrigin();
+      render();
+    } catch (err) {
+      $('#status').innerHTML = `<span class="bad">${esc(err?.message || 'Search failed')}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Search all sites';
+    }
+  });
+
+  // ---------- price history (this device only) for the forecast ----------
+  const histKey = (key, stay) => `hist:${key}:${stay.checkIn}:${stay.checkOut}:${stay.adults}`;
+  function snapshot(h, stay) {
+    if (!h.best) return;
+    const k = histKey(h.key, stay);
+    const hist = store.get(k, []);
+    if (hist.length && Date.now() - hist.at(-1).observedAt < 3600e3) return;
+    hist.push({ nightly: h.best.nightly, observedAt: Date.now() });
+    store.set(k, hist.slice(-60));
+  }
+  function withForecast(h, stay, at) {
+    const history = S.example ? [] : store.get(histKey(h.key, stay), []);
+    return { ...h, forecast: forecastPrice({ nightly: h.best?.nightly, checkIn: stay.checkIn, nights: h.nights, history, offers: h.offers, now: at || Date.now() }) };
+  }
+
+  // ---------- distance ----------
+  const originPoint = () => S.origin || S.center;
+  function renderOrigin() {
+    $('#origin-label').textContent = S.origin ? S.origin.name : S.center ? `${S.center.name || 'destination'} centre` : 'the destination centre';
+  }
+  $('#origin').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const q = $('#origin-q').value.trim();
+    if (!q) { S.origin = null; store.set('origin', null); renderOrigin(); render(); return; }
+    if (!S.mcp) { $('#origin-label').textContent = 'needs claude.ai to look up places'; return; }
+    $('#origin-label').textContent = 'looking up…';
+    try {
+      const hit = await tripadvisorGeocode(caller('tripadvisor'), q, { version: await taVersion() });
+      if (!hit) throw new Error(`Couldn't find “${q}”. Try adding the state.`);
+      S.origin = { ...hit, name: q };
+      store.set('origin', S.origin);
+      $('#origin-q').value = '';
+      renderOrigin();
+      render();
+    } catch (err) {
+      $('#origin-label').textContent = explain(err, 'Tripadvisor');
+    }
+  });
+  $('#unit').addEventListener('change', () => { store.set('unit', $('#unit').value); render(); });
+  const distKm = (h) => (h.lat == null ? null : haversineKm(originPoint(), { lat: h.lat, lng: h.lng }));
+
+  // ---------- highlight / filter / sort ----------
+  ['w-pool', 'w-hottub', 'w-heated'].forEach((id) => $('#' + id).addEventListener('change', () => { store.set(id, $('#' + id).checked); render(); }));
+  ['#sort', '#max', '#maxdist'].forEach((id) => $(id).addEventListener('input', () => { S.shown = 25; render(); }));
+
+  function heated(h) {
+    const v = S.heat.get(h.key)?.pool?.status;
+    return v === 'warm' || (v !== 'cold' && h.features.heatedPoolListed);
+  }
+  function perks(h) {
+    const has = []; const missing = [];
+    if ($('#w-pool').checked) (h.features.pool ? has : missing).push('pool');
+    if ($('#w-hottub').checked) (h.features.hotTub ? has : missing).push('hot tub');
+    if ($('#w-heated').checked) (heated(h) ? has : missing).push('heated pool');
+    return { has, missing, level: !has.length ? 0 : missing.length ? 1 : 2 };
+  }
+  function visible() {
+    const max = Number($('#max').value) || Infinity;
+    const md = Number($('#maxdist').value) * ($('#unit').value === 'km' ? 1 : KM_PER_MI);
+    const d = (h) => distKm(h) ?? Infinity;
+    const sorters = {
+      total: (a, b) => a.best.total - b.best.total,
+      nightly: (a, b) => a.best.nightly - b.best.nightly,
+      distance: (a, b) => d(a) - d(b),
+      rating: (a, b) => (b.rating || 0) - (a.rating || 0),
+    };
+    return S.hotels.filter((h) => h.best && h.best.nightly <= max && (!md || distKm(h) == null || distKm(h) <= md)).sort(sorters[$('#sort').value]);
+  }
+
+  function render() {
+    const list = visible();
+    const full = list.filter((h) => perks(h).level === 2).length;
+    const nights = S.hotels[0]?.nights || 1;
+    $('#summary').innerHTML = (S.example ? '<div class="example">Example: Scottsdale search, captured Oct 2 · search to see live prices</div>' : '')
+      + `${list.length} hotels · ${nights} night${nights > 1 ? 's' : ''}${full ? ` · <b>${full} have everything you highlighted</b>` : ''}`;
+    const root = $('#results');
+    root.innerHTML = '';
+    for (const h of list.slice(0, S.shown)) root.append(card(h));
+    if (list.length > S.shown) {
+      const b = document.createElement('button');
+      b.className = 'more';
+      b.textContent = `Show ${Math.min(25, list.length - S.shown)} more`;
+      b.addEventListener('click', () => { S.shown += 25; render(); });
+      root.append(b);
+    }
+    if (!list.length && S.hotels.length) root.innerHTML = '<p class="note">No hotels match these limits.</p>';
+  }
+
+  const taxNote = (o) => (o.taxIncluded === true ? 'incl. tax' : o.taxIncluded === false ? '+ tax' : 'tax may apply');
+
+  function card(h) {
+    const el = document.createElement('article');
+    const p = perks(h);
+    el.className = 'card' + (p.level === 2 ? ' full' : p.level === 1 ? ' some' : '');
+    const d = distKm(h);
+    const f = h.features;
+    const heat = S.heat.get(h.key);
+    const badges = [];
+    if (f.indoorPool) badges.push(['Indoor pool', 'perk']);
+    if (f.outdoorPool) badges.push(['Outdoor pool', 'perk']);
+    if (f.pool && !f.indoorPool && !f.outdoorPool) badges.push(['Pool', 'perk']);
+    if (f.hotTub) badges.push(['Hot tub', 'perk']);
+    if (f.heatedPoolListed) badges.push(['Heated pool (listed)', 'heat']);
+    if (heat) {
+      const cls = { warm: 'heat', cold: 'bad', mixed: 'warn' };
+      if (heat.pool.status !== 'unknown') badges.push(['Pool: ' + heat.pool.label, cls[heat.pool.status]]);
+      if (heat.hotTub.status !== 'unknown') badges.push(['Hot tub: ' + heat.hotTub.label, cls[heat.hotTub.status]]);
+    }
+    if (!f.amenitiesKnown) badges.push(['Amenities not listed', '']);
+    for (const s of h.sources) badges.push([s, 'src']);
+    const fc = h.forecast;
+    el.innerHTML = `
+      ${p.level ? `<span class="ribbon">${p.level === 2 ? '✓ Has ' + esc(p.has.join(' + ')) : 'Has ' + esc(p.has.join(' + ')) + ' · no ' + esc(p.missing.join(' / ')) + ' listed'}</span>` : ''}
+      <div class="top">
+        <div>
+          <h3 class="name">${h.link ? `<a href="${esc(h.link)}" target="_blank" rel="noopener">${esc(h.name)}</a>` : esc(h.name)}</h3>
+          <div class="meta">${[
+            h.stars ? '★'.repeat(h.stars) : '',
+            h.rating ? `<b>${h.rating}</b>/5${h.reviewCount ? ` (${h.reviewCount.toLocaleString()})` : ''}` : '',
+            d != null ? `${formatDistance(d, $('#unit').value)} from ${esc(S.origin ? S.origin.name : 'centre')}` : 'distance unknown',
+          ].filter(Boolean).join(' · ')}</div>
+        </div>
+        <div class="price">
+          <div class="nightly">${money(h.best.nightly)}<small> /night</small></div>
+          <div class="total">${money(h.best.total)} <small>total · ${h.nights}n</small></div>
+          <div class="where">${esc(h.best.source)} · ${taxNote(h.best)}</div>
+        </div>
+      </div>
+      <div class="badges">${badges.map(([t, c]) => `<span class="b ${c}">${esc(t)}</span>`).join('')}</div>
+      ${fc ? `<div class="fc">
+        <div>If you wait: tomorrow up to <b>${money(fc.tomorrow.high)}</b>/night · in a week ~<b>${money(fc.week.expected)}</b>, up to <b>${money(fc.week.high)}</b> (<b>${money(fc.week.highTotal)}</b> total)</div>
+        <div><b>${esc(fc.advice)}</b> ${fc.chanceUpInAWeek}% chance higher in 7 days.</div>
+        <details><summary>Why?</summary><ul>${fc.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></details>
+      </div>` : ''}
+      <div class="actions">
+        <button type="button" data-act="prices">Compare sites (${h.offers.length})</button>
+        ${f.amenitiesKnown && !f.pool && !f.hotTub ? '' : '<button type="button" data-act="heat">Is the pool heated?</button>'}
+      </div>
+      <div class="panel" data-panel="prices" hidden></div>
+      <div class="panel" data-panel="heat" hidden></div>`;
+    el.querySelector('[data-act="prices"]').addEventListener('click', (e) => prices(el, h, e.currentTarget));
+    el.querySelector('[data-act="heat"]')?.addEventListener('click', (e) => heatCheck(el, h, e.currentTarget));
+    if (heat) showHeat(el, heat);
+    return el;
+  }
+
+  function priceTable(offers) {
+    return `<div class="tbl"><table><thead><tr><th>Site</th><th class="n">Night</th><th class="n">Total</th><th></th></tr></thead><tbody>${
+      offers.map((o, i) => `<tr class="${i ? '' : 'best'}"><td>${esc(o.source)}${o.via ? `<small>via ${esc(o.via)}</small>` : ''}</td><td class="n">${money(o.nightly)}</td><td class="n">${money(o.total)}<small>${taxNote(o)}</small></td><td>${o.link ? `<a href="${esc(o.link)}" target="_blank" rel="noopener">Book</a>` : ''}</td></tr>`).join('')
+    }</tbody></table></div>`;
+  }
+
+  async function prices(el, h, btn) {
+    const panel = el.querySelector('[data-panel="prices"]');
+    if (!panel.hidden) { panel.hidden = true; return; }
+    panel.hidden = false;
+    panel.innerHTML = priceTable(h.offers);
+    if (S.example || !S.mcp) return;
+    btn.disabled = true;
+    panel.insertAdjacentHTML('beforeend', '<div class="note">Checking more sites…</div>');
+    const name = [h.name, h.city].filter(Boolean).join(', ');
+    const settled = await Promise.allSettled([
+      taVersion().then((version) => tripadvisorDetails(caller('tripadvisor'), S.stay, { hotelId: h.refs.tripadvisorId, hotelName: name, version })).then((d) => d.offers),
+      superLowest(caller('super'), S.stay, h.refs.superName || h.name).then((o) => [o]),
+    ]);
+    addOffers(h, settled.filter((r) => r.status === 'fulfilled').flatMap((r) => r.value));
+    const errs = settled.map((r, i) => (r.status === 'rejected' ? explain(r.reason, ['Tripadvisor', 'Super.com'][i]) : null)).filter(Boolean);
+    panel.innerHTML = priceTable(h.offers) + (errs.length ? `<div class="note">${esc(errs.join(' '))}</div>` : '');
+    btn.textContent = `Compare sites (${h.offers.length})`;
+    btn.disabled = false;
+    snapshot(h, S.stay);
+  }
+
+  async function heatCheck(el, h, btn) {
+    const panel = el.querySelector('[data-panel="heat"]');
+    if (!panel.hidden && S.heat.has(h.key)) { panel.hidden = true; return; }
+    panel.hidden = false;
+    if (!S.mcp) { panel.innerHTML = '<div class="note">Open this page in claude.ai to read reviews.</div>'; return; }
+    panel.innerHTML = '<div class="note">Reading recent guest reviews…</div>';
+    btn.disabled = true;
+    const name = [h.name, h.city].filter(Boolean).join(', ');
+    const [ta, bk] = await Promise.allSettled([
+      taVersion().then((version) => tripadvisorDetails(caller('tripadvisor'), S.stay, { hotelId: h.refs.tripadvisorId, hotelName: name, version })),
+      h.refs.bookingId ? bookingAnswer(caller('booking'), h.refs.bookingId, HEAT_QUESTION) : Promise.resolve(null),
+    ]);
+    btn.disabled = false;
+    const reviews = ta.status === 'fulfilled' ? ta.value.reviews : [];
+    const answer = bk.status === 'fulfilled' ? bk.value : null;
+    if (!reviews.length && !answer) {
+      panel.innerHTML = `<div class="err">${esc(ta.status === 'rejected' ? explain(ta.reason, 'Tripadvisor') : 'No reviews found for this hotel.')}</div>`;
+      return;
+    }
+    const result = analyzeReviews([...reviews, ...(answer ? [{ text: answer, source: 'Booking.com answer' }] : [])], { heatedPoolListed: h.features.heatedPoolListed });
+    result.bookingAnswer = answer;
+    result.summary = ta.status === 'fulfilled' && /pool|hot tub|jacuzzi/i.test(ta.value.summary || '') ? ta.value.summary : null;
+    S.heat.set(h.key, result);
+    const fresh = card(h);
+    el.replaceWith(fresh);
+    fresh.querySelector('[data-panel="heat"]').hidden = false;
+  }
+
+  function heatBlock(title, v) {
+    const n = v.warm + v.cold;
+    return `<div><h4>${title}: ${esc(v.label)}</h4><div class="note">${n ? `${v.warm} warm vs ${v.cold} cold · confidence ${v.confidence}` : `${v.mentions} mention${v.mentions === 1 ? '' : 's'}, none about temperature`}</div>${
+      v.evidence.map((e) => `<div class="q ${e.sentiment}">“${esc(e.quote)}”${e.date ? ` <span class="note">${esc(e.date)}</span>` : ''}</div>`).join('')}</div>`;
+  }
+
+  function showHeat(el, d) {
+    const panel = el.querySelector('[data-panel="heat"]');
+    panel.innerHTML = `<div class="heat-grid">${heatBlock('Pool', d.pool)}${heatBlock('Hot tub', d.hotTub)}</div>
+      ${d.bookingAnswer ? `<div class="answer"><b>Booking.com:</b> ${esc(d.bookingAnswer)}</div>` : ''}
+      ${d.summary ? `<div class="answer"><b>Tripadvisor summary:</b> ${esc(d.summary)}</div>` : ''}
+      <div class="note">From ${d.reviewsAnalyzed} recent reviews. Outdoor pools are often heated only part of the year; check the dates.</div>`;
+  }
+
+  // Example results (a real Scottsdale search) so the page shows what it does before the first search.
+  if (EXAMPLE) {
+    S.example = true;
+    S.stay = EXAMPLE.stay;
+    S.hotels = EXAMPLE.hotels.map((h) => withForecast(h, EXAMPLE.stay, EXAMPLE.observedAt));
+    S.center = EXAMPLE.center;
+    render();
+  }
+})();
+</script>

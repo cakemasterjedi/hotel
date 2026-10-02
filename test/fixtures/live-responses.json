@@ -1,0 +1,747 @@
+{
+ "super": {
+  "city_name": "Phoenix (and vicinity)",
+  "hotels": [
+   {
+    "name": "Talking Stick Resort",
+    "description": null,
+    "stars": 4,
+    "country": "US",
+    "state": "AZ",
+    "city": "Phoenix (and vicinity)",
+    "images": [
+     "https://i.travelapi.com/lodging/4000000/3380000/3374700/3374607/cb17cb46_z.jpg"
+    ],
+    "amenities": [
+     "Pool umbrellas",
+     "Breakfast available (surcharge)",
+     "Free wifi",
+     "Swimming pool",
+     "Restaurants",
+     "Free parking",
+     "RV, bus, truck parking (surcharge)",
+     "Outdoor pool",
+     "Gym/fitness center"
+    ],
+    "price_before_tax": 230.1,
+    "price_after_tax": 270.9,
+    "currency": "USD",
+    "url": "https://www.super.com/travel/hotels/VGJv0NGb?utm_source=external_mcp&num_adults=1&checkin_at=2026-10-20&checkout_at=2026-10-21&expand_params=false"
+   },
+   {
+    "name": "Home2 Suites By Hilton Scottsdale Old Town",
+    "description": null,
+    "stars": 3,
+    "country": "US",
+    "state": "AZ",
+    "city": "Phoenix (and vicinity)",
+    "images": [
+     "https://i.travelapi.com/lodging/1000000/90000/85100/85035/40ff6eec_z.jpg"
+    ],
+    "amenities": [
+     "Pool umbrellas",
+     "Pet friendly",
+     "Wheelchair-accessible pool",
+     "Free wifi",
+     "Number of accessible parking spaces - 6",
+     "No accessible shuttle",
+     "Pool hoist on site",
+     "Free breakfast",
+     "Swimming pool",
+     "Self parking (surcharge)",
+     "Pool sun loungers",
+     "Wheelchair-accessible fitness center",
+     "Wheelchair-accessible van parking",
+     "Outdoor pool",
+     "Wheelchair accessible parking",
+     "Free wired internet",
+     "Gym/fitness center"
+    ],
+    "price_before_tax": 112.64,
+    "price_after_tax": 131.94,
+    "currency": "USD",
+    "url": "https://www.super.com/travel/hotels/AGv6X6GX?utm_source=external_mcp&num_adults=1&checkin_at=2026-10-20&checkout_at=2026-10-21&expand_params=false"
+   },
+   {
+    "name": "Hilton Garden Inn Scottsdale Old Town",
+    "description": null,
+    "stars": 3,
+    "country": "US",
+    "state": "AZ",
+    "city": "Phoenix (and vicinity)",
+    "images": [
+     "https://i.travelapi.com/lodging/1000000/430000/424200/424156/99334f2b_z.jpg"
+    ],
+    "amenities": [
+     "Pet friendly",
+     "No accessible shuttle",
+     "Internet access in public areas - high speed",
+     "Wheelchair accessible parking",
+     "High-speed internet access",
+     "Self parking (surcharge)",
+     "Restaurants",
+     "Internet access (complimentary)",
+     "Gym/fitness center",
+     "Breakfast available (surcharge)",
+     "Wheelchair-accessible pool",
+     "Free wifi",
+     "Swimming pool",
+     "Wheelchair-accessible fitness center",
+     "Number of accessible parking spaces - 3",
+     "Pool sun loungers",
+     "Wheelchair-accessible on-site restaurant",
+     "Outdoor pool",
+     "Wheelchair-accessible van parking"
+    ],
+    "price_before_tax": 243.89,
+    "price_after_tax": 286.99,
+    "currency": "USD",
+    "url": "https://www.super.com/travel/hotels/7lozNkW6?utm_source=external_mcp&num_adults=1&checkin_at=2026-10-20&checkout_at=2026-10-21&expand_params=false"
+   },
+   {
+    "name": "Hotel Valley Ho",
+    "description": null,
+    "stars": 4,
+    "country": "US",
+    "state": "AZ",
+    "city": "Phoenix (and vicinity)",
+    "images": [
+     "https://i.travelapi.com/lodging/1000000/20000/15300/15298/a5b28c6a_z.jpg"
+    ],
+    "amenities": [
+     "Internet access - wireless",
+     "Valet parking (surcharge)",
+     "Pet friendly",
+     "Number of accessible parking spaces - 9",
+     "No accessible shuttle",
+     "Internet access in public areas - high speed",
+     "Wheelchair accessible parking",
+     "Pool hoist on site",
+     "Self parking (surcharge)",
+     "Restaurants",
+     "Gym/fitness center",
+     "Pool umbrellas",
+     "Breakfast available (surcharge)",
+     "Wheelchair-accessible pool",
+     "Free wifi",
+     "Swimming pool",
+     "Wheelchair-accessible fitness center",
+     "Pool cabanas (surcharge)",
+     "Fence around pool",
+     "Pet Friendly",
+     "Pool sun loungers",
+     "WiFi speed - 25+ Mbps",
+     "Wheelchair-accessible on-site restaurant",
+     "Outdoor pool",
+     "Wheelchair-accessible van parking",
+     "Wireless internet access"
+    ],
+    "price_before_tax": 322.33,
+    "price_after_tax": 380.9,
+    "currency": "USD",
+    "url": "https://www.super.com/travel/hotels/EW2PQbjo?utm_source=external_mcp&num_adults=1&checkin_at=2026-10-20&checkout_at=2026-10-21&expand_params=false"
+   }
+  ],
+  "url": "https://www.super.com/travel/regions/29896/cities/-/Phoenix_%28and_vicinity%29/?num_adults=1&checkin_at=2026-10-20&checkout_at=2026-10-21"
+ },
+ "booking": {
+  "accommodations": [
+   {
+    "id": 44809,
+    "name": "Hilton Garden Inn Scottsdale Old Town",
+    "url": "https://www.booking.com/hotel/us/hilton-garden-inn-scottsdale-old-town.html?aid=8132308&checkin=2026-10-20&checkout=2026-10-22&no_rooms=1&group_adults=2&selected_currency=USD",
+    "price": {
+     "book": 494.96,
+     "currency": "USD"
+    },
+    "rating": {
+     "number_of_reviews": 328,
+     "review_score": 8.4,
+     "stars": 3,
+     "stars_type": "official"
+    },
+    "facilities": [
+     "Parking",
+     "Restaurant",
+     "Pet friendly",
+     "Meeting/Banquet facilities",
+     "Bar",
+     "24-hour front desk",
+     "Fitness center",
+     "Non-smoking rooms",
+     "Business center",
+     "Laundry",
+     "Dry cleaning",
+     "Facilities for disabled guests",
+     "Family rooms",
+     "Internet",
+     "Elevator",
+     "Express check-in/out",
+     "Safe",
+     "Heating",
+     "Fax/Photocopying",
+     "Baggage storage",
+     "Wifi",
+     "Mini golf",
+     "Outdoor pool",
+     "Free Wifi",
+     "Smoke-free property",
+     "Air conditioning",
+     "Designated smoking area",
+     "ATM on site",
+     "Snack bar",
+     "Outdoor pool (year-round)",
+     "Special diet meals (on request)",
+     "Convenience store on site",
+     "Daily housekeeping",
+     "Parking on site",
+     "Private Parking",
+     "Wifi in all areas",
+     "Accessible parking",
+     "Wheelchair accessible",
+     "Wine/Champagne",
+     "Beach chairs/Loungers",
+     "Outdoor furniture",
+     "Outdoor fireplace",
+     "Fitness",
+     "Key card access",
+     "Smoke alarms",
+     "Fire extinguishers",
+     "Swimming pool",
+     "Use of cleaning chemicals that are effective against coronavirus",
+     "Linens, towels, and laundry washed in accordance with local authority guidelines",
+     "Guest accommodation disinfected between stays",
+     "Food can be delivered to guest accommodation",
+     "Staff follow all safety protocols as directed by local authorities",
+     "Hand sanitizer in guest accommodation and common areas",
+     "First aid kits available",
+     "Cashless payment available",
+     "Invoice provided",
+     "All plates, cutlery, glasses, and other tableware sanitized",
+     "Guests have the option to cancel any cleaning services for their accommodation during their stay",
+     "Delivered food covered securely"
+    ],
+    "location": {
+     "address": "7324 East Indian School Road",
+     "city_name": "Scottsdale",
+     "district_name": "Old Town Scottsdale",
+     "postal_code": "AZ 85251",
+     "country_code": "us",
+     "country_name": "United States",
+     "coordinates": {
+      "latitude": 33.495504,
+      "longitude": -111.923596
+     }
+    }
+   }
+  ]
+ },
+ "tripadvisor": {
+  "searchParameters": {
+   "travelInfo": {
+    "adults": 2,
+    "checkInDate": "2026-10-20",
+    "checkOutDate": "2026-10-22",
+    "usedDefaultDates": false,
+    "rooms": 1,
+    "childrenAges": []
+   },
+   "searchGeoData": {
+    "geoId": 31350,
+    "name": "Scottsdale",
+    "lat": 33.49642,
+    "lon": -111.92447
+   }
+  },
+  "hotels": [
+   {
+    "hotelId": 1724079,
+    "hotelName": "Talking Stick Resort",
+    "hotelReviewUrl": "/Hotel_Review-g31350-d1724079-Reviews-Talking_Stick_Resort-Scottsdale_Arizona.html?staydates=2026_10_20_2026_10_22&uguests=1_2&m=70064",
+    "geocode": {
+     "latitude": 33.540215,
+     "longitude": -111.86967
+    },
+    "metaResult": {
+     "isFullMatch": true,
+     "primaryOffers": [
+      {
+       "availabilityStatus": "AVAILABLE",
+       "displayPrice": "$678",
+       "displayTaxesAndFees": "$73",
+       "isLowestPricedOffer": false,
+       "pricingMode": "BASE_PLUS_FEES_FULL_STAY",
+       "commerceUrl": "/Commerce?p=Expedia&src=32664066&geo=1724079&from=HotelDateSearch_MCP_Map&slot=1&matchID=1&oos=0&cnt=11&silo=5621&bucket=910485&nrank=1&crank=1&clt=D&ttype=DesktopMeta&tm=370860400&managed=false&capped=false&gosox=g3mOHSdVEVklIIucYB6iBUuMhzeo2cKahSW-s-7tG1c8Uz4Tby40c_N8pmsx1yexIfNZ1Z96u0EbMqPRe7crsiw9VaaSZkQu4zd3vwY1TG4bBRNGlS0IJtRfWFoxEBGlJNy_fXxrRqr2mY8N4PC4tDFOHjPl2Xon3oFuSa8MbsrNXzSCC_4dXDbhAc1V-K9pypR-gIgWd2PnKk80iSnzrcbBbb3T56iKNNuupLPi5bj4MT5vwlq2-6MBIpoAPlP0dPy3_b_b0dDRFML5kYfXkSYxNI3y8oYl1MsELwCk0O43PYnuB7e0hnpB8kIAHYUp&priceShown=678.00&pm=BPFFS&hac=AVAILABLE&mbl=LOSE&mbldelta=22100&rq=P&rate=314.00&taxesRate=47.54&feesRate=25.00&fees=72.54&cur=USD&adults=2&child_rm_ages=&inDay=20&outDay=22&rdex=RDEX_784c3e20089fd23508ca88afc09035ce&rooms=1&inMonth=10&inYear=2026&outMonth=10&outYear=2026&auid=8ed05c0e-2057-4327-b094-6db671d06478&def_d=false&bld=L_2,D_18,G_2,W_2,U_0,C_261020,T_9&bh=true&uf=P_-1,-1&cs=1625499633c7d9485fc8056513edc4abf&ik=b5ce0e94b732442588e17ca6405ae183&aok=49c20ae985f94770934fdbe7ee379597&tp=Hotels_MapDetail&pageLocId=31350&m=70064"
+      }
+     ]
+    },
+    "reviewSummary": {
+     "rating": 3.8,
+     "count": 1557
+    },
+    "thumbnail": {
+     "photoSizes": [
+      {
+       "url": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0e/31/55/f8/talking-stick-resort.jpg?w=100&h=100&s=1",
+       "width": 0,
+       "height": 0
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-t/0e/31/55/f8/talking-stick-resort.jpg",
+       "width": 50,
+       "height": 50
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-l/0e/31/55/f8/talking-stick-resort.jpg",
+       "width": 150,
+       "height": 150
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-i/0e/31/55/f8/talking-stick-resort.jpg",
+       "width": 180,
+       "height": 200
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-f/0e/31/55/f8/talking-stick-resort.jpg",
+       "width": 250,
+       "height": 166
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-s/0e/31/55/f8/talking-stick-resort.jpg",
+       "width": 550,
+       "height": 366
+      }
+     ]
+    },
+    "locationV2": {
+     "isGeo": false,
+     "names": {
+      "name": "Talking Stick Resort"
+     },
+     "geocode": {
+      "latitude": 33.540215,
+      "longitude": -111.86967
+     },
+     "hotelStyleRankings": [
+      {
+       "styleName": "Mountain View"
+      },
+      {
+       "styleName": "Centrally Located"
+      },
+      {
+       "styleName": "Modern"
+      }
+     ]
+    },
+    "priceInfo": {
+     "availabilityStatus": "AVAILABLE",
+     "displayPrice": "$678",
+     "displayTaxesAndFees": "$73",
+     "isLowestPricedOffer": false,
+     "pricingMode": "BASE_PLUS_FEES_FULL_STAY",
+     "linkToBook": null
+    }
+   },
+   {
+    "hotelId": 579764,
+    "hotelName": "Hotel Valley Ho",
+    "hotelReviewUrl": "/Hotel_Review-g31350-d579764-Reviews-Hotel_Valley_Ho-Scottsdale_Arizona.html?staydates=2026_10_20_2026_10_22&uguests=1_2&m=70064",
+    "geocode": {
+     "latitude": 33.493629,
+     "longitude": -111.93325
+    },
+    "metaResult": {
+     "isFullMatch": true,
+     "primaryOffers": [
+      {
+       "availabilityStatus": "AVAILABLE",
+       "displayPrice": "$918",
+       "displayTaxesAndFees": "$64",
+       "isLowestPricedOffer": false,
+       "pricingMode": "BASE_PLUS_FEES_FULL_STAY",
+       "commerceUrl": "/Commerce?p=Expedia&src=32700881&geo=579764&from=HotelDateSearch_MCP_Map&slot=1&matchID=1&oos=0&cnt=13&silo=5621&bucket=910485&nrank=1&crank=1&clt=D&ttype=DesktopMeta&tm=370860400&managed=false&capped=false&gosox=QqQmEHgVJvG9W46XbwgYrkuMhzeo2cKahSW-s-7tG1c8Uz4Tby40c_N8pmsx1yex6DfpcJV5a_AbeSwiQIfdXQfUnAbhXu2Ik2iTUBxN6ScbBRNGlS0IJtRfWFoxEBGlJNy_fXxrRqr2mY8N4PC4tPLXJh0FZ9Y4mlw28kAAkGuFyw0FueLzNkWpR45W4aiAbgCNpeC9-PAIjYWwD6bRUvhEO9C8xUkcX_f-b2tF2Sz4MT5vwlq2-6MBIpoAPlP0dPy3_b_b0dDRFML5kYfXkSYxNI3y8oYl1MsELwCk0O43PYnuB7e0hnpB8kIAHYUp&priceShown=918.00&pm=BPFFS&hac=AVAILABLE&mbl=LOSE&mbldelta=30300&rq=P&rate=459.00&taxesRate=64.13&feesRate=0.00&fees=64.13&cur=USD&adults=2&child_rm_ages=&inDay=20&outDay=22&rdex=RDEX_16c90d683d5895bd3a20fe816304c1f3&rooms=1&inMonth=10&inYear=2026&outMonth=10&outYear=2026&auid=7bcb58da-854e-4315-a1d3-89c3f396ea99&def_d=false&bld=L_2,D_18,G_2,W_2,U_0,C_261020,T_9&bh=true&uf=P_-1,-1&cs=1b020d8ac016271c316bfc9058ab04cd9&ik=b5ce0e94b732442588e17ca6405ae183&aok=4832717f96944bec954a81f770d8aa1c&tp=Hotels_MapDetail&pageLocId=31350&m=70064"
+      }
+     ]
+    },
+    "reviewSummary": {
+     "rating": 4.6,
+     "count": 3272
+    },
+    "thumbnail": {
+     "photoSizes": [
+      {
+       "url": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2f/c2/7b/51/caption.jpg?w=100&h=100&s=1",
+       "width": 0,
+       "height": 0
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-t/2f/c2/7b/51/caption.jpg",
+       "width": 50,
+       "height": 50
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-l/2f/c2/7b/51/caption.jpg",
+       "width": 150,
+       "height": 150
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-i/2f/c2/7b/51/caption.jpg",
+       "width": 180,
+       "height": 200
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-f/2f/c2/7b/51/caption.jpg",
+       "width": 250,
+       "height": 187
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-s/2f/c2/7b/51/caption.jpg",
+       "width": 550,
+       "height": 412
+      }
+     ]
+    },
+    "locationV2": {
+     "isGeo": false,
+     "names": {
+      "name": "Hotel Valley Ho"
+     },
+     "geocode": {
+      "latitude": 33.493629,
+      "longitude": -111.93325
+     },
+     "hotelStyleRankings": [
+      {
+       "styleName": "Mountain View"
+      },
+      {
+       "styleName": "Boutique"
+      },
+      {
+       "styleName": "Green"
+      }
+     ]
+    },
+    "priceInfo": {
+     "availabilityStatus": "AVAILABLE",
+     "displayPrice": "$918",
+     "displayTaxesAndFees": "$64",
+     "isLowestPricedOffer": false,
+     "pricingMode": "BASE_PLUS_FEES_FULL_STAY",
+     "linkToBook": null
+    }
+   },
+   {
+    "hotelId": 74487,
+    "hotelName": "Hilton Garden Inn Scottsdale Old Town",
+    "hotelReviewUrl": "/Hotel_Review-g31350-d74487-Reviews-Hilton_Garden_Inn_Scottsdale_Old_Town-Scottsdale_Arizona.html?staydates=2026_10_20_2026_10_22&uguests=1_2&m=70064",
+    "geocode": {
+     "latitude": 33.495556,
+     "longitude": -111.923538
+    },
+    "metaResult": {
+     "isFullMatch": true,
+     "primaryOffers": [
+      {
+       "availabilityStatus": "AVAILABLE",
+       "displayPrice": "$495",
+       "displayTaxesAndFees": "$35",
+       "isLowestPricedOffer": false,
+       "pricingMode": "BASE_PLUS_FEES_FULL_STAY",
+       "commerceUrl": "/Commerce?p=Priceline&src=38586491&geo=74487&from=HotelDateSearch_MCP_Map&slot=1&matchID=1&oos=0&cnt=13&silo=17376&bucket=1012474&nrank=1&crank=1&clt=D&ttype=DesktopMeta&tm=370860400&managed=false&capped=false&gosox=rSF2zvI5WGeTI816riciBix4rPXci55S3AFLFmy1XkmwFAyItuDgc0hwsPx0wxcm-3hSmQ5KRsbWg4Mp1CwSt7to2th5p0kmYWBUiz9kNfKfJdTed_0C4NQMZeGNKiLV4_9T1439VDROyA41GdXvs3C9p0k-sFRrrWeKd5cZkiPKQRxZQtOZEA367KELTJOTQ8Cp3qd8n-fAUuosEYkHR5HsFpELXARcLdvCl2UKFz34MT5vwlq2-6MBIpoAPlP0dPy3_b_b0dDRFML5kYfXkSYxNI3y8oYl1MsELwCk0O43PYnuB7e0hnpB8kIAHYUp&priceShown=494.98&pm=BPFFS&hac=AVAILABLE&mbl=LOSE&mbldelta=600&rq=P&rate=247.49&taxesRate=34.58&feesRate=0.00&fees=34.58&cur=USD&adults=2&child_rm_ages=&inDay=20&outDay=22&rdex=RDEX_3fa1115b9f1d22ec1b078b2efaa36de&rooms=1&inMonth=10&inYear=2026&outMonth=10&outYear=2026&auid=760185c6-6b2d-4f35-af80-0bd3ea9d758d&def_d=false&bld=L_2,D_18,G_2,W_2,U_0,C_261020,T_9&bh=true&uf=P_-1,-1&cs=1ea60bf5bd2d6ec176274a13cd9919d23&ik=b5ce0e94b732442588e17ca6405ae183&aok=32d3af3d902643bd94b38161a32a6ce4&tp=Hotels_MapDetail&pageLocId=31350&m=70064"
+      }
+     ]
+    },
+    "reviewSummary": {
+     "rating": 4.1,
+     "count": 1257
+    },
+    "thumbnail": {
+     "photoSizes": [
+      {
+       "url": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/09/b4/ba/17/beautiful-evening-by.jpg?w=100&h=100&s=1",
+       "width": 0,
+       "height": 0
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-t/09/b4/ba/17/beautiful-evening-by.jpg",
+       "width": 50,
+       "height": 50
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-l/09/b4/ba/17/beautiful-evening-by.jpg",
+       "width": 150,
+       "height": 150
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-f/09/b4/ba/17/beautiful-evening-by.jpg",
+       "width": 250,
+       "height": 166
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-o/09/b4/ba/17/beautiful-evening-by.jpg",
+       "width": 390,
+       "height": 260
+      },
+      {
+       "url": "https://media-cdn.tripadvisor.com/media/photo-s/09/b4/ba/17/beautiful-evening-by.jpg",
+       "width": 550,
+       "height": 366
+      }
+     ]
+    },
+    "locationV2": {
+     "isGeo": false,
+     "names": {
+      "name": "Hilton Garden Inn Scottsdale Old Town"
+     },
+     "geocode": {
+      "latitude": 33.495556,
+      "longitude": -111.923538
+     },
+     "hotelStyleRankings": [
+      {
+       "styleName": "Green"
+      },
+      {
+       "styleName": "Centrally Located"
+      },
+      {
+       "styleName": "Modern"
+      }
+     ]
+    },
+    "priceInfo": {
+     "availabilityStatus": "AVAILABLE",
+     "displayPrice": "$495",
+     "displayTaxesAndFees": "$35",
+     "isLowestPricedOffer": false,
+     "pricingMode": "BASE_PLUS_FEES_FULL_STAY",
+     "linkToBook": null
+    }
+   }
+  ]
+ },
+ "tripadvisorDetails": {
+  "hotel": {
+   "id": 1724079,
+   "name": "Talking Stick Resort",
+   "rating": 3.8,
+   "reviewCount": 1557,
+   "priceRange": "$662 - $1,082",
+   "priceFrom": 662,
+   "currency": "USD",
+   "images": [],
+   "location": {
+    "address": "9800 E Talking Stick Way, Scottsdale, AZ 85256-3622",
+    "latitude": 33.540215,
+    "longitude": -111.86967
+   },
+   "amenities": [
+    {
+     "name": "Free parking",
+     "category": "propertyAmenities",
+     "icon": "parking",
+     "highlighted": true,
+     "tagId": 9163
+    },
+    {
+     "name": "Free High Speed Internet (WiFi)",
+     "category": "propertyAmenities",
+     "icon": "wifi",
+     "highlighted": true,
+     "tagId": 9176
+    },
+    {
+     "name": "Fitness Center with Gym / Workout Room",
+     "category": "propertyAmenities",
+     "icon": "fitness",
+     "highlighted": true,
+     "tagId": 9188
+    },
+    {
+     "name": "Pool",
+     "category": "propertyAmenities",
+     "icon": "pool",
+     "highlighted": true,
+     "tagId": 6217
+    },
+    {
+     "name": "Bar / lounge",
+     "category": "propertyAmenities",
+     "icon": "food-drink",
+     "highlighted": true,
+     "tagId": 9166
+    },
+    {
+     "name": "Casino and Gambling",
+     "category": "propertyAmenities",
+     "icon": "attractions",
+     "highlighted": true,
+     "tagId": 9171
+    },
+    {
+     "name": "Game room",
+     "category": "propertyAmenities",
+     "icon": "attractions",
+     "highlighted": true,
+     "tagId": 18979
+    },
+    {
+     "name": "Shuttle bus service",
+     "category": "propertyAmenities",
+     "icon": "taxi",
+     "highlighted": true,
+     "tagId": 9157
+    }
+   ],
+   "description": "Welcome to Talking Stick Resort, a luxurious Four-Diamond Scottsdale resort, where fun is limited only by your imagination. Turn on the excitement in our 240,000 square foot casino, one of the largest in Arizona. Savor the flavors and take in the panoramic views from the award-winning Orange Sky Restaurant. Check out Vegas-style entertainment and local favorites as they take the stage in the Grand Ballroom. Test your skills on 36-holes of championship golf at Talking Stick Golf Club, one of the most scenic and challenging golf courses in Scottsdale. Then when it’s time to relax, head up to The Spa at Talking Stick and enjoy a relaxing spa treatment overlooking incredible views of the Valley.",
+   "propertyType": "Unknown",
+   "starRating": 3,
+   "contactInfo": null,
+   "policies": null,
+   "reviews": [
+    {
+     "title": "Terreble Promotions",
+     "text": "The casino do not have anything for low limit slot machine players. If you are the one who bets at lower than $4, you will not get almost no promotions or free play or gifts.\nNo free water stations. \n\nYou have to go to bars and beg for free water; they will look at you and expect tip.",
+     "rating": 2,
+     "publishedDate": "2026-09-09"
+    },
+    {
+     "title": "Get a Suite; It Is Sweet",
+     "text": "Beautiful, out in desert, clean and fun.  Flew in for a John Mellencamp concert at the amphitheater.  It is not near the resort- \nHate that the best restaurant is closed sunday and monday!  Has best view.   \nGet a suite; it is sweet!",
+     "rating": 5,
+     "publishedDate": "2026-08-11"
+    },
+    {
+     "title": "4th of July weekend.",
+     "text": "The room service could have been better. Our food was cold and we were missing food. The room was ok not great. Some of the furniture was old and the toilets are so low. I could barely get up from it. The shower was great. We staying in a luxury suite and we were a little disappointed. And we paid alot and I wish we could have and better service. Thank you, Juanita Boss",
+     "rating": 3,
+     "publishedDate": "2026-07-07"
+    },
+    {
+     "title": "Beyond tight and shady",
+     "text": "Google “talking stick slots tight” and you will find hundreds of posts. It’s kind of insane. I’m pretty suspicious of their blackjack tables with the auto shuffler. It’s shady. I don’t trust this place and neither should you. Save your money…go to Vegas. This place is absolutely rigged.",
+     "rating": 1,
+     "publishedDate": "2026-05-02"
+    },
+    {
+     "title": "Good stay; great conference!",
+     "text": "My second stay here but the first year holding the conference in the resort. The conference food was GREAT. I’ve never had banquet/buffet style food this delicious. The property shows slight wear and tear here and there but overall is a very nice stay! The adult pool is quiet and relaxing. The hot tub is open late. The bathtub in the room is large and great for relaxing. Top Golf within walking distance.",
+     "rating": 4,
+     "publishedDate": "2026-04-28"
+    },
+    {
+     "title": "Fun Night Out",
+     "text": "We were in Phoenix for a week vacation. We decided to have some fun at this casino. The casino was very clean. No smoking is allowed inside which was great. When you sign up for s players card you get $25 slot dollars . There were plenty of slot choices and well as video Roulette, Craps and Black Jack.  They also had table games Staff was very friendly and helpful. There is plenty of parking . Coveninet to get to off Rt # 101.  We did not eat when we were there. I would recommend",
+     "rating": 5,
+     "publishedDate": "2026-04-20"
+    },
+    {
+     "title": "Anniversary weekend",
+     "text": "Absolutely love the ground for unit overlook the main pool to the east. Arrive fresh cut, strawberries, and cookies ready. Really enjoyed our day. Look forward to going back.",
+     "rating": 5,
+     "publishedDate": "2026-03-04"
+    },
+    {
+     "title": "Not the Birthday Getaway We Expected",
+     "text": "My husband brought me to Talking Stick Resort for my birthday weekend, and unfortunately the experience was extremely uncomfortable from the moment we arrived.\n\nRight after checking in, a security officer approached me and said I had triggered a “weapons alarm.” I was told I needed to come with her immediately for my belongings to be searched, and that if I refused, we would be asked to leave the property. This was humiliating, especially being escorted publicly to the security area.\n\nThey used a wand and nothing went off. The only item in question was a decorative backdrop my husband brought to surprise me and decorate the room for my birthday. Once we showed it, we were dismissed without any real explanation.\n\nLater that same night at the Palo Verde Lounge, we noticed security standing nearby watching us closely while speaking into an earpiece, which made us feel uneasy and monitored for the remainder of the weekend.\n\nI shared this experience in a feedback email on January 5th, 2026, and received only a brief response from Kyung Yoon stating that the situation would be “shared with the team,” along with a general apology. Unfortunately, no meaningful effort was made to address what happened or attempt to rectify how deeply this impacted our stay.\n\nI understand the need for safety measures, but the lack of discretion, communication, and follow-up completely overshadowed what was meant to be a special birthday celebration. We left feeling disappointed and that our time and money were not valued.",
+     "rating": 1,
+     "publishedDate": "2026-02-02"
+    },
+    {
+     "title": "Was defrauded by the Talking Stick Hotel",
+     "text": "I was defrauded by this hotel. I don’t know if it was intentional or the result of incompetence. However, after booking and paying for a two-night reservation, receiving email confirmations, reminders for the trip, etc., my wife and I were told when we checked in that they were fully booked for the second night, and we in fact, did not have a room.\n\nNo offer for a refund for the second night. No cooperation whatsoever. Just really dismissive customer service when they clearly made an error that ruined the scant amount of time my wife and I can get away.",
+     "rating": 1,
+     "publishedDate": "2025-12-13"
+    },
+    {
+     "title": "Awesome!!!",
+     "text": "I was working for my company who held a conference here. This is a great property. The sleeping rooms are large, clean and modern. The conference area is awesome….I would suggest you try to keep your meetings all on one floor if possible. The food they served our attendees was great! The banquet staff was out of this world helpful and efficient! The fact that the property is non smoking is a huge bonus!! The entire property is lovely! It is a bit isolated, so a rental car might help but Uber etc  is plentiful. Plenty of restaurants on property. If you are not a golfer…no worries the golf course restaurant is fabulous as well…limited hours but good food and service and a short walk from the hotel! Can’t say enough about this lovely spot!",
+     "rating": 5,
+     "publishedDate": "2025-11-08"
+    }
+   ],
+   "bestAwardForActiveYear": null,
+   "hotelStyleRankings": [
+    {
+     "styleName": "Mountain View"
+    },
+    {
+     "styleName": "Centrally Located"
+    },
+    {
+     "styleName": "Modern"
+    }
+   ],
+   "absoluteUrl": "https://www.tripadvisor.com/Hotel_Review-g31350-d1724079-Reviews-Talking_Stick_Resort-Scottsdale_Arizona.html?staydates=2026_10_20_2026_10_23&uguests=1_2&m=70064",
+   "fullAddress": "9800 E Talking Stick Way, Scottsdale, AZ 85256-3622",
+   "subRatings": {
+    "cleanliness": 4.41689,
+    "location": 4.0654845,
+    "rooms": 4.3448277,
+    "service": 3.9712696,
+    "sleepQuality": 4.264012,
+    "value": 3.7860963
+   }
+  },
+  "offers": {
+   "lowestPrice": "$662",
+   "metaOffers": [
+    {
+     "displayPrice": "$1,082",
+     "currencyCode": "USD",
+     "providerName": "Expedia.com",
+     "providerRawName": "Expedia.com",
+     "providerLogo": "img2/branding/hotels/expedia_logo_384164.png",
+     "isInstantBook": false,
+     "isMemberRate": false,
+     "commerceUrl": "https://www.tripadvisor.com/Commerce?p=Expedia&src=32664066&geo=1724079&from=HotelDateSearch_MCP&slot=1&matchID=1&oos=0&cnt=12&silo=5621&bucket=910485&nrank=1&crank=1&clt=D&ttype=DesktopMeta&tm=370860475&managed=false&capped=false&gosox=Q_e912DoM8KtpIcAT1upgEuMhzeo2cKahSW-s-7tG1f-CIYSiqTadn5VmndYDcLg8xBryAElSsr24frCAiu5-16qYop8yPcSjjeXlbSil3UbBRNGlS0IJtRfWFoxEBGlJNy_fXxrRqr2mY8N4PC4tKq1n2zlxU-WGPPWwi9lMRpYSdmxT3wRIZjgBCEQ3bT-4EFuDqVHn5xnP_S3JNCCWPeuFK0RwN2qauQIvULCFrxzgatla7Um4kB-hPwkN7bozGV0AIgop81P6eu05sFRQy5OD2OcK_Tf3m2MoOhawGyIH8VBXX4NMxGL4ObcgTc6&priceShown=1082.01&pm=BPFFS&hac=AVAILABLE&mbl=LOSE&mbldelta=42000&rq=P&rate=335.67&taxesRate=50.57&feesRate=25.00&fees=75.57&cur=USD&adults=2&child_rm_ages=&inDay=20&outDay=23&rdex=RDEX_3d7a2fbfc0c272995a34a14536cfd01&rooms=1&inMonth=10&inYear=2026&outMonth=10&outYear=2026&auid=214edfaf-7480-4a41-8eb1-0593b9ab2321&def_d=false&bld=L_3,D_18,G_2,W_2,U_0,C_261020,T_9&bh=true&cs=1297d8cc606c7cc90302d38d602f73b74&ik=fbc98010fba148d293a6ecbeef039610&aok=9fa024cd169444a688e24beade2da6a0&tp=MCP-Other-ClickToTA&pageLocId=1724079&m=70040",
+     "roomsRemaining": 17,
+     "merchandiseMessages": [
+      {
+       "message": "Fully refundable before Sat, Oct 17",
+       "type": "FREE_CANCELLATION"
+      }
+     ],
+     "status": "AVAILABLE"
+    },
+    {
+     "displayPrice": "$1,082",
+     "currencyCode": "USD",
+     "providerName": "Hotels.com",
+     "providerRawName": "Hotels.com",
+     "providerLogo": "img2/branding/hotels/HCom_2026_en.png",
+     "isInstantBook": false,
+     "isMemberRate": false,
+     "commerceUrl": "https://www.tripadvisor.com/Commerce?p=HotelsCom2&src=34588573&geo=1724079&from=HotelDateSearch_MCP&slot=2&matchID=1&oos=0&cnt=12&silo=6036&bucket=951473&nrank=3&crank=3&clt=D&ttype=DesktopMeta&tm=370860475&managed=false&capped=false&gosox=FkA2EJHcLfm-vVPvtiEW4AQ7qWTbteA4IZqjJefRzXFReZ_AyHRVAgFVEWTzpb83eLj4pHQwih7Q44WdFBQWqbysiZQvDb-hp3M6UWyZlkX28qZTCPW-XajnOS5Lob1g6zm1l4XxegRXsvxQBld2RC4N9Pw2NHuEs1CfWrpUoZHCe2taal_7591mdyrqWCkoecDeh3RJxQkvl4g4NbTRfLT93a75NhpbazQX3AQYWg7lP0vQfkfxCKOWJp9Kc_uCs5Vi2VfZpKVzWhgyPki97IExi2usuHD6tYUI4RF8maxSno0V2FqJ2cSrOVpw-MTo&priceShown=1082.01&pm=BPFFS&hac=AVAILABLE&mbl=LOSE&mbldelta=42000&rq=P&rate=335.67&taxesRate=50.57&feesRate=25.00&fees=75.57&cur=USD&adults=2&child_rm_ages=&inDay=20&outDay=23&rdex=RDEX_22811aeaba244fbbc2211dae54c48225&rooms=1&inMonth=10&inYear=2026&outMonth=10&outYear=2026&auid=214edfaf-7480-4a41-8eb1-0593b9ab2321&def_d=false&bld=L_3,D_18,G_2,W_2,U_0,C_261020,T_9&bh=true&cs=18b3c0395dc25ac57bae7a351e1d7221b&ik=fbc98010fba148d293a6ecbeef039610&aok=41f94b277753485da29d05867324c2a1&tp=MCP-Other-ClickToTA&pageLocId=1724079&m=70040",
+     "roomsRemaining": 17,
+     "merchandiseMessages": [
+      {
+       "message": "Fully refundable before Sat, Oct 17",
+       "type": "FREE_CANCELLATION"
+      }
+     ],
+     "status": "AVAILABLE"
+    },
+    {
+     "displayPrice": "$662",
+     "currencyCode": "USD",
+     "providerName": "ZenHotels.com",
+     "providerRawName": "ZenHotels.com",
+     "providerLogo": "img2/branding/hotels/zenlogo.png",
+     "isInstantBook": false,
+     "isMemberRate": false,
+     "commerceUrl": "https://www.tripadvisor.com/Commerce?p=ZenHotels&src=105977545&geo=1724079&from=HotelDateSearch_MCP&slot=3&matchID=1&oos=0&cnt=12&silo=24520&bucket=901413&nrank=12&crank=12&clt=D&ttype=DesktopMeta&tm=370860475&managed=true&capped=false&gosox=TxJQYK0kt4rLOjnUT43KzWU1qC1eISI6VumHUsee-vfkeqh5bw9dyWgcjzNYpXYTIIU3txWqR_JTfnFd4w4BpTa0ZfMxEoiJ6USTfGwu9Fqd_3C9ShO1IdLj2KeiPlYHQeDMIZo6yZRg6_CLh_VDaZ7G09Q5tIq2mVupIo_3BzNEi34V_YZMLmBh6pzEzgVzMklvYJFdSzWol0rEmH7ySk1cuOTCNcc8s7zr6bJun0d1s4aVnk7n0ska9cM_e6G6SW958QHks1b584pjaRGtXwODxf4AuNAUi0MEASq7uqo&priceShown=661.62&pm=BPFFS&hac=AVAILABLE&mbl=BEAT&mbldelta=0&rq=P&rate=192.04&taxesRate=31.31&feesRate=28.50&fees=59.81&cur=USD&adults=2&child_rm_ages=&inDay=20&outDay=23&rdex=RDEX_6b37efe47a9079d960027fa31b136b2a&rooms=1&inMonth=10&inYear=2026&outMonth=10&outYear=2026&auid=214edfaf-7480-4a41-8eb1-0593b9ab2321&def_d=false&bld=L_3,D_18,G_2,W_2,U_0,C_261020,T_9&bh=true&cs=1328fd6cc274c48c5efd8e8a89ce2dc3a&ik=fbc98010fba148d293a6ecbeef039610&aok=cbad77d6b8da448484eddee0671682ec&tp=MCP-Other-ClickToTA&pageLocId=1724079&m=70040",
+     "roomsRemaining": -1,
+     "merchandiseMessages": [],
+     "status": "AVAILABLE"
+    }
+   ],
+   "priceDisclaimer": "Prices are provided by our partners, and reflect the total cost for all nights, including any mandatory fees. Taxes not included. Please see our partners for more details.",
+   "additionalDisclaimer": null,
+   "complete": true
+  }
+ }
+}

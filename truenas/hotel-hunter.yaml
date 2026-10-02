@@ -1,0 +1,35 @@
+# TrueNAS SCALE (24.10 "Electric Eel" or newer):
+#   Apps → Discover Apps → ⋮ (top right) → Install via YAML → paste this file.
+# Before installing:
+#   1. Create a dataset for the app's data, e.g. tank/apps/hotel-hunter,
+#      and give the "apps" user (UID 568) write access to it.
+#   2. Change the host path below if your pool isn't called "tank".
+#   3. Set APP_PASSWORD (and optionally SERPAPI_KEY).
+services:
+  hotel-hunter:
+    image: ghcr.io/cakemasterjedi/hotel:latest
+    pull_policy: always
+    restart: unless-stopped
+    user: "568:568"
+    ports:
+      - "8095:3000"          # open http://<truenas-ip>:8095
+    environment:
+      APP_USER: admin
+      APP_PASSWORD: change-me
+      SERPAPI_KEY: ""        # optional: adds Google Hotels (more sites + more reviews)
+      TZ: America/Phoenix
+    volumes:
+      - /mnt/tank/apps/hotel-hunter:/data
+
+  # Optional: put the app on your own domain with HTTPS without opening any
+  # ports on your router. Create a tunnel in Cloudflare Zero Trust → Networks
+  # → Tunnels, add a public hostname (e.g. hotels.yourdomain.com) pointing to
+  # http://hotel-hunter:3000, then paste the tunnel token below and uncomment.
+  # cloudflared:
+  #   image: cloudflare/cloudflared:latest
+  #   restart: unless-stopped
+  #   command: tunnel --no-autoupdate run
+  #   environment:
+  #     TUNNEL_TOKEN: "paste-your-tunnel-token-here"
+  #   depends_on:
+  #     - hotel-hunter

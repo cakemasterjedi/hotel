@@ -1,3 +1,4 @@
+# For a VPS: app + Caddy (automatic HTTPS). For TrueNAS use truenas/hotel-hunter.yaml instead.
 services:
   app:
     build: .

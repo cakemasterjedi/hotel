@@ -1,14 +1,17 @@
 {
   "name": "hotel-hunter",
   "version": "1.0.0",
-  "description": "Self-hosted hotel price comparison with pool/hot-tub filters, heated-pool review detection and price forecasts",
+  "description": "Self-hosted hotel price comparison (Super.com, Booking.com, Tripadvisor, Google Hotels) with pool/hot-tub highlights, distance, heated-pool review check and price forecasts",
   "type": "module",
   "main": "src/server.js",
-  "engines": { "node": ">=22.5" },
+  "engines": {
+    "node": ">=22.5"
+  },
   "scripts": {
-    "start": "node --no-warnings=ExperimentalWarning src/server.js",
-    "dev": "node --no-warnings=ExperimentalWarning --watch src/server.js",
-    "test": "node --no-warnings=ExperimentalWarning --test test/*.test.js"
+    "start": "node --no-warnings src/server.js",
+    "dev": "node --no-warnings --watch src/server.js",
+    "test": "node --no-warnings --test test/*.test.js",
+    "build:mobile": "node scripts/build-mobile.js"
   },
   "dependencies": {
     "express": "^4.21.2"

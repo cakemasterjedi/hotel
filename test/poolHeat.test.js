@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { analyzeReviews, scoreSentence } from '../src/poolHeat.js';
+import { analyzeReviews, scoreSentence } from '../src/shared/poolHeat.js';
 
 const r = (text) => ({ text, rating: 4, date: '1 month ago' });
 

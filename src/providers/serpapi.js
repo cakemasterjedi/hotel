@@ -1,8 +1,8 @@
-// Live data from Google Hotels via SerpApi. Google Hotels aggregates rates from
-// Booking.com, Expedia, Hotels.com, Priceline, Agoda, Trip.com, the hotel's own
-// site and many more, so one query compares nearly every major booking site.
+// Optional: Google Hotels via SerpApi (needs SERPAPI_KEY). Google Hotels
+// compares Booking.com, Expedia, Hotels.com, Priceline, Agoda, the hotels'
+// own sites and more, and has guest reviews for the heated-pool check.
 import { config } from '../config.js';
-import { detectFeatures, nightsBetween, offer } from './normalize.js';
+import { makeOffer, nightsBetween } from '../shared/merge.js';
 
 const BASE = 'https://serpapi.com/search.json';
 
@@ -13,124 +13,78 @@ async function call(params) {
   }
   const res = await fetch(url, { signal: AbortSignal.timeout(45_000) });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok || body.error) {
-    throw new Error(`SerpApi: ${body.error || `HTTP ${res.status}`}`);
-  }
+  if (!res.ok || body.error) throw new Error(`SerpApi: ${body.error || `HTTP ${res.status}`}`);
   return body;
 }
 
-function mapOffers(prices = [], nights) {
-  return prices
-    .map((p) => offer({
-      source: p.source,
-      logo: p.logo,
-      link: p.link,
-      nightly: p.rate_per_night?.extracted_lowest,
-      total: p.total_rate?.extracted_lowest,
-      nightlyBeforeTax: p.rate_per_night?.extracted_before_taxes_fees,
-      totalBeforeTax: p.total_rate?.extracted_before_taxes_fees,
-      nights,
-      freeCancellation: p.free_cancellation,
-    }))
-    .filter(Boolean);
-}
-
-function mapProperty(p, nights) {
-  const offers = mapOffers(p.prices, nights);
-  const headline = offer({
-    source: offers[0]?.source || 'Best listed rate',
+function offers(prices = [], nights) {
+  return prices.map((p) => makeOffer({
+    source: p.source,
+    via: 'Google',
     link: p.link,
     nightly: p.rate_per_night?.extracted_lowest,
     total: p.total_rate?.extracted_lowest,
     nightlyBeforeTax: p.rate_per_night?.extracted_before_taxes_fees,
     totalBeforeTax: p.total_rate?.extracted_before_taxes_fees,
     nights,
-  });
-  const all = headline ? [headline, ...offers] : offers;
-  const best = all.reduce((a, b) => (!a || b.nightly < a.nightly ? b : a), null);
-  const amenities = p.amenities || [];
+    taxIncluded: true,
+    freeCancellation: p.free_cancellation,
+  })).filter(Boolean);
+}
+
+function listing(p, nights) {
+  const list = offers(p.prices, nights);
+  if (!list.length && p.rate_per_night?.extracted_lowest) {
+    list.push(makeOffer({ source: 'Google Hotels', link: p.link, nightly: p.rate_per_night.extracted_lowest, total: p.total_rate?.extracted_lowest, nights, taxIncluded: true }));
+  }
   return {
-    token: p.property_token,
+    source: 'google',
+    sourceLabel: 'Google',
     name: p.name,
-    type: p.type,
-    link: p.link,
-    description: p.description,
-    image: p.images?.[0]?.thumbnail || p.images?.[0]?.original_image || null,
-    hotelClass: p.extracted_hotel_class || null,
+    lat: p.gps_coordinates?.latitude ?? null,
+    lng: p.gps_coordinates?.longitude ?? null,
+    stars: p.extracted_hotel_class || null,
     rating: p.overall_rating || null,
     reviewCount: p.reviews || 0,
-    location: p.gps_coordinates || null,
-    amenities,
-    features: detectFeatures(amenities),
-    best,
-    offers,
-    nights,
+    image: p.images?.[0]?.thumbnail || null,
+    link: p.link,
+    amenities: p.amenities || [],
+    offers: list,
+    refs: { serpToken: p.property_token },
   };
 }
 
-export async function searchHotels({ q, checkIn, checkOut, adults, children, currency }) {
-  const nights = nightsBetween(checkIn, checkOut);
-  const hotels = [];
+export async function searchGoogle(stay) {
+  const nights = nightsBetween(stay.checkIn, stay.checkOut);
+  const out = [];
   let token;
   for (let page = 0; page < config.searchPages; page++) {
     const data = await call({
-      engine: 'google_hotels',
-      q,
-      check_in_date: checkIn,
-      check_out_date: checkOut,
-      adults,
-      children: children || undefined,
-      currency,
-      gl: config.gl,
-      sort_by: 3, // lowest price first
-      next_page_token: token,
+      engine: 'google_hotels', q: stay.q, check_in_date: stay.checkIn, check_out_date: stay.checkOut,
+      adults: stay.adults, children: stay.children || undefined, currency: stay.currency, gl: config.gl, sort_by: 3, next_page_token: token,
     });
-    for (const p of data.properties || []) {
-      if (p.property_token) hotels.push(mapProperty(p, nights));
-    }
+    for (const p of data.properties || []) if (p.property_token) out.push(listing(p, nights));
     token = data.serpapi_pagination?.next_page_token;
     if (!token) break;
   }
-  // Pages can overlap; keep the first occurrence of each property.
-  const seen = new Set();
-  return hotels.filter((h) => !seen.has(h.token) && seen.add(h.token));
+  return out;
 }
 
-// Full per-site price list for one hotel.
-export async function hotelDetails({ token, q, checkIn, checkOut, adults, children, currency }) {
-  const nights = nightsBetween(checkIn, checkOut);
+export async function googleOffers(stay, token) {
+  const nights = nightsBetween(stay.checkIn, stay.checkOut);
   const data = await call({
-    engine: 'google_hotels',
-    q,
-    property_token: token,
-    check_in_date: checkIn,
-    check_out_date: checkOut,
-    adults,
-    children: children || undefined,
-    currency,
-    gl: config.gl,
+    engine: 'google_hotels', q: stay.q, property_token: token, check_in_date: stay.checkIn, check_out_date: stay.checkOut,
+    adults: stay.adults, children: stay.children || undefined, currency: stay.currency, gl: config.gl,
   });
-  const hotel = mapProperty({ ...data, property_token: token }, nights);
-  const offers = [...mapOffers(data.featured_prices, nights), ...hotel.offers];
-  // De-duplicate by source, keeping the cheapest.
-  const bySource = new Map();
-  for (const o of offers) {
-    const prev = bySource.get(o.source);
-    if (!prev || o.nightly < prev.nightly) bySource.set(o.source, o);
-  }
-  hotel.offers = [...bySource.values()].sort((a, b) => a.nightly - b.nightly);
-  if (hotel.offers[0] && (!hotel.best || hotel.offers[0].nightly < hotel.best.nightly)) hotel.best = hotel.offers[0];
-  return hotel;
+  return [...offers(data.featured_prices, nights), ...offers(data.prices, nights)];
 }
 
-export async function hotelReviews({ token }) {
+export async function googleReviews(token) {
   const reviews = [];
   let next;
   for (let page = 0; page < config.reviewPages; page++) {
     const data = await call({ engine: 'google_hotels_reviews', property_token: token, sort_by: 2, next_page_token: next });
-    for (const r of data.reviews || []) {
-      if (r.snippet) reviews.push({ text: r.snippet, rating: r.rating ?? null, date: r.date || null, source: r.source || null });
-    }
+    for (const r of data.reviews || []) if (r.snippet) reviews.push({ text: r.snippet, rating: r.rating ?? null, date: r.date || null, source: 'Google' });
     next = data.serpapi_pagination?.next_page_token;
     if (!next) break;
   }

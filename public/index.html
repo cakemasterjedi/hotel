@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hotel Hunter</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏨</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <h1>🏨 Hotel Hunter</h1>
+      <nav>
+        <button class="tab active" data-tab="search">Search</button>
+        <button class="tab" data-tab="watch">Watchlist <span id="watch-count" class="count"></span></button>
+      </nav>
+    </div>
+  </header>
+
+  <div id="demo-banner" class="banner wrap" hidden>
+    Demo mode: prices and reviews are made up. Add a <code>SERPAPI_KEY</code> to get live prices from every booking site.
+  </div>
+
+  <main class="wrap">
+    <section id="tab-search">
+      <form id="search-form" class="card search">
+        <label class="grow">Destination
+          <input name="q" placeholder="e.g. Scottsdale, AZ or hotels near Disneyland" required>
+        </label>
+        <label>Check-in <input type="date" name="checkIn" required></label>
+        <label>Check-out <input type="date" name="checkOut" required></label>
+        <label class="narrow">Adults <input type="number" name="adults" min="1" max="10" value="2"></label>
+        <label class="narrow">Kids <input type="number" name="children" min="0" max="10" value="0"></label>
+        <label class="narrow">Currency
+          <select name="currency">
+            <option>USD</option><option>CAD</option><option>EUR</option><option>GBP</option><option>AUD</option><option>MXN</option>
+          </select>
+        </label>
+        <button type="submit" class="primary">Search all sites</button>
+      </form>
+
+      <div id="filters" class="card filters" hidden>
+        <label>Pool
+          <select id="f-pool">
+            <option value="any">Doesn't matter</option>
+            <option value="pool">Any pool</option>
+            <option value="indoor">Indoor pool</option>
+            <option value="outdoor">Outdoor pool</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="f-hottub"> Hot tub / Jacuzzi</label>
+        <label class="check" title="Only hotels whose reviews say the pool is warm. Run 'Check pool heat' first."><input type="checkbox" id="f-heated"> Heated pool (per reviews)</label>
+        <label>Max / night <input type="number" id="f-max" min="0" placeholder="any"></label>
+        <label>Min rating
+          <select id="f-rating"><option value="0">Any</option><option value="3.5">3.5+</option><option value="4">4.0+</option><option value="4.5">4.5+</option></select>
+        </label>
+        <label>Min stars
+          <select id="f-stars"><option value="0">Any</option><option value="2">2+</option><option value="3">3+</option><option value="4">4+</option><option value="5">5</option></select>
+        </label>
+        <label>Sort by
+          <select id="f-sort">
+            <option value="total">Total price</option>
+            <option value="nightly">Price per night</option>
+            <option value="rating">Guest rating</option>
+            <option value="value">Best value (rating ÷ price)</option>
+          </select>
+        </label>
+        <button id="bulk-heat" type="button" class="secondary" title="Reads reviews of the visible hotels that have a pool or hot tub">Check pool heat for top 10</button>
+      </div>
+
+      <p id="summary" class="muted"></p>
+      <div id="results"></div>
+    </section>
+
+    <section id="tab-watch" hidden>
+      <p class="muted">Watched stays are re-priced automatically every <span id="watch-interval">12</span> hours. The more history, the better the price forecast.</p>
+      <div id="watchlist"></div>
+    </section>
+  </main>
+
+  <template id="hotel-tpl">
+    <article class="card hotel">
+      <div class="thumb"></div>
+      <div class="body">
+        <div class="head">
+          <div>
+            <h3 class="name"></h3>
+            <div class="meta"></div>
+          </div>
+          <div class="price">
+            <div class="nightly"></div>
+            <div class="total"></div>
+            <div class="where"></div>
+          </div>
+        </div>
+        <div class="badges"></div>
+        <div class="forecast"></div>
+        <div class="actions">
+          <button class="secondary act-prices">Compare all sites</button>
+          <button class="secondary act-heat">Check pool heat</button>
+          <button class="secondary act-watch">☆ Watch price</button>
+        </div>
+        <div class="panel panel-prices" hidden></div>
+        <div class="panel panel-heat" hidden></div>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

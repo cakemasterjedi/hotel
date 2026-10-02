@@ -29,9 +29,27 @@
   <main class="wrap">
     <section id="tab-search">
       <form id="search-form" class="card search">
-        <label class="grow">Destination
+        <div class="mode-row" role="radiogroup" aria-label="Search type">
+          <button type="button" class="mode-btn active" data-mode="dest" role="radio" aria-checked="true">🏙️ Destination</button>
+          <button type="button" class="mode-btn" data-mode="near" role="radio" aria-checked="false">📍 Near me</button>
+        </div>
+        <label class="grow" id="dest-field">Destination
           <input id="q" name="q" placeholder="e.g. Scottsdale, AZ" required>
         </label>
+        <div class="grow near-field" id="near-field" hidden>
+          <span class="near-label">Hotels within</span>
+          <div class="near-row">
+            <select id="near-radius" aria-label="Search radius">
+              <option value="5">5 mi</option><option value="10">10 mi</option><option value="15" selected>15 mi</option>
+              <option value="25">25 mi</option><option value="50">50 mi</option>
+            </select>
+            <span>of</span>
+            <b id="near-where">your location</b>
+            <button type="button" id="near-locate" class="secondary small">📍 Locate me</button>
+            <input id="near-q" placeholder="or type a city / address" aria-label="Search near a city or address">
+          </div>
+          <span id="near-note" class="near-note"></span>
+        </div>
         <label>Check-in <input id="checkIn" type="date" name="checkIn" required></label>
         <label>Check-out <input id="checkOut" type="date" name="checkOut" required></label>
         <label class="narrow">Adults <input id="adults" type="number" name="adults" min="1" max="10" value="2"></label>
@@ -67,7 +85,7 @@
             </select>
           </label>
           <label>Max distance
-            <select id="f-dist"><option value="0">Any</option><option value="5">5</option><option value="10">10</option><option value="25">25</option><option value="50">50</option></select>
+            <select id="f-dist"><option value="0">Any</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="25">25</option><option value="50">50</option></select>
           </label>
           <label>Max / night <input type="number" id="f-max" min="0" placeholder="any"></label>
           <label>Min rating

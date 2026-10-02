@@ -42,3 +42,27 @@ export async function geocodeHotel(name, center) {
   }
   return null;
 }
+
+const US_STATES = { Alabama: 'AL', Alaska: 'AK', Arizona: 'AZ', Arkansas: 'AR', California: 'CA', Colorado: 'CO', Connecticut: 'CT', Delaware: 'DE', 'District of Columbia': 'DC', Florida: 'FL', Georgia: 'GA', Hawaii: 'HI', Idaho: 'ID', Illinois: 'IL', Indiana: 'IN', Iowa: 'IA', Kansas: 'KS', Kentucky: 'KY', Louisiana: 'LA', Maine: 'ME', Maryland: 'MD', Massachusetts: 'MA', Michigan: 'MI', Minnesota: 'MN', Mississippi: 'MS', Missouri: 'MO', Montana: 'MT', Nebraska: 'NE', Nevada: 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', Ohio: 'OH', Oklahoma: 'OK', Oregon: 'OR', Pennsylvania: 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC', 'South Dakota': 'SD', Tennessee: 'TN', Texas: 'TX', Utah: 'UT', Vermont: 'VT', Virginia: 'VA', Washington: 'WA', 'West Virginia': 'WV', Wisconsin: 'WI', Wyoming: 'WY' };
+
+// Coordinates -> "Maple Heights, OH" (town and state).
+export async function reverseGeocode(lat, lng) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&zoom=12&lat=${lat}&lon=${lng}`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'HotelHunter/1.0 (self-hosted)' }, signal: AbortSignal.timeout(10_000) });
+  const a = (await res.json()).address || {};
+  const town = a.city || a.town || a.village || a.hamlet || a.suburb || a.county;
+  const state = US_STATES[a.state] || a.state;
+  return [town, state].filter(Boolean).join(', ') || null;
+}
+
+const PRIVATE_IP = /^(::1|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|fc|fd|::ffff:(127|10|192\.168)\.)/i;
+
+// Approximate location from an IP address. For a private (home network) IP we
+// look up the server's own public IP instead, which is the same household.
+export async function locateIp(ip) {
+  const target = ip && !PRIVATE_IP.test(ip) ? encodeURIComponent(ip.replace(/^::ffff:/, '')) : '';
+  const res = await fetch(`https://ipwho.is/${target}`, { signal: AbortSignal.timeout(10_000) });
+  const j = await res.json();
+  if (!j.success) return null;
+  return { lat: j.latitude, lng: j.longitude, name: [j.city, j.region_code || j.region].filter(Boolean).join(', '), approximate: true };
+}

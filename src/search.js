@@ -5,6 +5,7 @@ import { demoCaller } from './providers/demo.js';
 import * as google from './providers/serpapi.js';
 import { geocode } from './geocode.js';
 import { merge, addOffers, nightsBetween } from './shared/merge.js';
+import { nearbyAreas, withinRadius } from './shared/near.js';
 import {
   SOURCE_INFO, searchSuper, searchBooking, searchTripadvisor, tripadvisorDetails, tripadvisorVersion,
   superLowest, bookingAnswer, HEAT_QUESTION,
@@ -40,7 +41,7 @@ export function searchAll(stay) {
 
 // Searches one or more place names (e.g. a suburb plus the nearby city) and,
 // when `near` is given, Booking.com by radius around that point instead.
-export async function searchArea(stay, { areas, near = null }) {
+export async function searchArea(stay, { areas, near = null, bookingListings = null }) {
   const nights = nightsBetween(stay.checkIn, stay.checkOut);
   const jobs = [];
   for (const q of areas) {
@@ -51,7 +52,8 @@ export async function searchArea(stay, { areas, near = null }) {
     }
     if (enabled('google')) jobs.push(['google', google.searchGoogle(s)]);
   }
-  if (enabled('booking')) jobs.push(['booking', searchBooking(callFor('booking'), near ? { ...stay, near } : { ...stay, q: areas[0] })]);
+  if (bookingListings) jobs.push(['booking', Promise.resolve(bookingListings)]);
+  else if (enabled('booking')) jobs.push(['booking', searchBooking(callFor('booking'), near ? { ...stay, near } : { ...stay, q: areas[0] })]);
 
   const settled = await Promise.allSettled(jobs.map(([, p]) => p));
   const listings = [];
@@ -80,6 +82,20 @@ export async function searchArea(stay, { areas, near = null }) {
   });
   const hotels = merge(unique, nights).filter((h) => h.best);
   return { hotels, status, center };
+}
+
+// Hotels within `radiusKm` of a point (e.g. the user's location). Booking.com
+// is searched by radius; the towns its hotels are in are then searched on the
+// other sites, which only accept place names.
+export async function searchNear(stay, { point, radiusKm, label }) {
+  const near = { lat: point.lat, lng: point.lng, radiusKm };
+  let bookingListings = [];
+  if (enabled('booking')) {
+    try { bookingListings = await searchBooking(callFor('booking'), { ...stay, near }); } catch { bookingListings = null; }
+  }
+  const areas = nearbyAreas(bookingListings || [], { base: label, point, radiusKm });
+  const result = await searchArea({ ...stay, q: areas[0] }, { areas, near, bookingListings });
+  return { ...result, hotels: withinRadius(result.hotels, point, radiusKm), center: { lat: point.lat, lng: point.lng, name: label }, areas };
 }
 
 // Every site's price for one hotel ("Compare all sites").

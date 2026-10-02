@@ -66,21 +66,116 @@ document.querySelectorAll('.tab').forEach((btn) => btn.addEventListener('click',
   if (btn.dataset.tab === 'watch') loadWatches();
 }));
 
+// ---------- near me ----------
+state.mode = store.get('mode', 'dest');
+state.near = store.get('near', null);
+$('#near-radius').value = String(store.get('radius', 15));
+
+function setMode(mode) {
+  state.mode = mode;
+  store.set('mode', mode);
+  document.querySelectorAll('.mode-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+    b.setAttribute('aria-checked', String(b.dataset.mode === mode));
+  });
+  $('#dest-field').hidden = mode !== 'dest';
+  $('#near-field').hidden = mode !== 'near';
+  form.q.required = mode === 'dest';
+}
+document.querySelectorAll('.mode-btn').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+$('#near-radius').addEventListener('change', () => store.set('radius', Number($('#near-radius').value)));
+
+function setNear(near, note = '') {
+  state.near = near;
+  store.set('near', near);
+  $('#near-where').textContent = near ? near.name : 'your location';
+  $('#near-note').textContent = note || (near?.approximate ? 'Approximate location from your internet connection. Tap “Locate me” on an https page for GPS, or type a place.' : '');
+  $('#near-note').classList.remove('err');
+}
+
+function nearError(msg) {
+  $('#near-note').textContent = msg;
+  $('#near-note').classList.add('err');
+}
+
+// GPS when the browser allows it (https), otherwise the server's IP lookup.
+async function locate() {
+  $('#near-where').textContent = 'locating…';
+  if (navigator.geolocation && window.isSecureContext) {
+    try {
+      const pos = await new Promise((ok, fail) => navigator.geolocation.getCurrentPosition(ok, fail, { timeout: 15000, maximumAge: 300000, enableHighAccuracy: false }));
+      const { latitude: lat, longitude: lng } = pos.coords;
+      const { name } = await api(`/api/reverse?lat=${lat}&lng=${lng}`).catch(() => ({ name: 'your location' }));
+      setNear({ lat, lng, name, approximate: false });
+      return state.near;
+    } catch { /* denied or unavailable: fall back to IP */ }
+  }
+  try {
+    setNear(await api('/api/whereami'));
+  } catch (err) {
+    setNear(null);
+    nearError(err.message);
+  }
+  return state.near;
+}
+$('#near-locate').addEventListener('click', () => locate());
+
+async function nearFromText() {
+  const q = $('#near-q').value.trim();
+  if (!q) return state.near;
+  $('#near-where').textContent = 'looking up…';
+  try {
+    const hit = await api(`/api/geocode?q=${encodeURIComponent(q)}`);
+    setNear({ ...hit, name: q, approximate: false });
+    $('#near-q').value = '';
+  } catch (err) {
+    setNear(state.near);
+    nearError(err.message);
+    return null;
+  }
+  return state.near;
+}
+$('#near-q').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); nearFromText(); }
+});
+$('#near-q').addEventListener('change', () => nearFromText());
+
+setMode(state.mode);
+setNear(state.near);
+
 // ---------- search ----------
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(form));
+  let params = data;
+  if (state.mode === 'near') {
+    const near = (await nearFromText()) || state.near || (await locate());
+    if (!near) return;
+    const radiusMi = Number($('#near-radius').value);
+    data.q = near.name;
+    params = { ...data, nearLat: near.lat, nearLng: near.lng, nearName: near.name, radiusMi };
+  } else {
+    store.set('q', data.q);
+  }
   state.stay = data;
-  store.set('q', data.q);
   const btn = form.querySelector('button[type=submit]');
   btn.disabled = true;
   btn.textContent = 'Searching…';
-  $('#results').innerHTML = '<p class="muted empty">Comparing prices on Super.com, Booking.com, Tripadvisor and more. This takes 10–30 seconds.</p>';
+  $('#results').innerHTML = `<p class="muted empty">${state.mode === 'near' ? `Finding hotels within ${params.radiusMi} mi of ${esc(data.q)}…` : 'Comparing prices on Super.com, Booking.com, Tripadvisor and more.'} This takes 10–40 seconds.</p>`;
   $('#summary').textContent = '';
   try {
-    const res = await api(`/api/search?${new URLSearchParams(data)}`);
+    const res = await api(`/api/search?${new URLSearchParams(params)}`);
     state.hotels = res.hotels;
     state.center = res.center;
+    if (state.mode === 'near') {
+      // Measure distances from you and hide anything outside the radius.
+      state.origin = { lat: state.near.lat, lng: state.near.lng, name: state.near.name };
+      store.set('origin', state.origin);
+      $('#unit').value = 'mi';
+      store.set('unit', 'mi');
+      $('#f-dist').value = String(params.radiusMi);
+      if (res.areas?.length) res.status.push({ label: `Searched ${res.areas.join(', ')} + ${params.radiusMi} mi radius`, ok: true, note: true });
+    }
     state.heat.clear();
     state.shown = 40;
     $('#filters').hidden = false;
@@ -97,7 +192,7 @@ form.addEventListener('submit', async (e) => {
 });
 
 function renderSources(status = [], cached) {
-  const parts = status.map((s) => (s.ok
+  const parts = status.map((s) => (s.note ? esc(s.label) : s.ok
     ? `${esc(s.label)} <b>${s.count}</b>`
     : `<span class="warn-text" title="${esc(s.error)}">${esc(s.label)} unavailable</span>`));
   $('#sources').innerHTML = `Compared ${parts.join(' · ')}${cached ? ' · <span title="Saved results from the last few hours">cached</span>' : ''}`;

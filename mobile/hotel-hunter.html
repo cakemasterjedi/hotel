@@ -90,6 +90,7 @@ a { color: var(--water); }
 .q.cold { border-color: var(--water); }
 .answer { font-size: 13px; background: var(--bg); padding: 8px 10px; border-radius: 10px; }
 .err { color: var(--bad); font-size: 14px; }
+.near-f { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 10px; }
 .more { justify-self: center; }
 @media (min-width: 560px) { .grid { grid-template-columns: 2fr 1fr 1fr; } .grid .half { grid-column: span 1; } }
 @media (prefers-reduced-motion: no-preference) { .card { transition: border-color .2s, box-shadow .2s; } }
@@ -105,7 +106,17 @@ a { color: var(--water); }
 
   <form id="search" class="sheet" autocomplete="off">
     <div class="grid">
-      <label class="f full">Destination <input id="q" required placeholder="City, e.g. Scottsdale, AZ"></label>
+      <div class="row full" role="radiogroup" aria-label="Search type">
+        <label class="chip"><input type="radio" name="mode" value="dest" checked> Destination</label>
+        <label class="chip"><input type="radio" name="mode" value="near"> Near a place</label>
+      </div>
+      <label class="f full" id="dest-f">Destination <input id="q" required placeholder="City, e.g. Scottsdale, AZ"></label>
+      <div class="full near-f" id="near-f" hidden>
+        <label class="f">Near <input id="near-q" placeholder="Your city or address, e.g. Maple Heights, OH"></label>
+        <label class="f">Within
+          <select id="near-radius"><option value="5">5 mi</option><option value="10">10 mi</option><option value="15" selected>15 mi</option><option value="25">25 mi</option><option value="50">50 mi</option></select>
+        </label>
+      </div>
       <label class="f">Check-in <input id="checkIn" type="date" required></label>
       <label class="f">Check-out <input id="checkOut" type="date" required></label>
       <label class="f">Adults <input id="adults" type="number" min="1" max="10" value="2" inputmode="numeric"></label>
@@ -141,7 +152,7 @@ a { color: var(--water); }
       </label>
       <label class="f">Max / night <input id="max" type="number" min="0" inputmode="numeric" placeholder="Any"></label>
       <label class="f">Max distance
-        <select id="maxdist"><option value="0">Any</option><option value="5">5</option><option value="10">10</option><option value="25">25</option><option value="50">50</option></select>
+        <select id="maxdist"><option value="0">Any</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="25">25</option><option value="50">50</option></select>
       </label>
     </div>
   </section>
@@ -174,6 +185,47 @@ function formatDistance(km, unit = 'mi') {
 }
 
 return { haversineKm, KM_PER_MI, formatDistance };
+})();
+
+const __near = (() => {
+// "Near me" search helpers (browser + server).
+//
+// Booking.com can search a radius around a point, but Super.com and
+// Tripadvisor only take place names. So we search Booking.com first, take
+// the towns its nearby hotels are in, and search those towns on the other sites.
+const { haversineKm } = __geo;
+
+// "Maple Heights, OH" -> "OH"
+function stateOf(label) {
+  const m = /,\s*([A-Z]{2})\b/.exec(label || '');
+  return m ? m[1] : null;
+}
+
+function nearbyAreas(listings, { base, point, radiusKm, max = 2 }) {
+  const state = stateOf(base);
+  const counts = new Map();
+  for (const l of listings) {
+    if (!l.city) continue;
+    const d = l.lat != null && point ? haversineKm(point, l) : 0;
+    if (d > radiusKm) continue;
+    const city = l.city.replace(/\s*\(.*\)$/, '').trim();
+    counts.set(city, (counts.get(city) || 0) + 1);
+  }
+  const baseCity = (base || '').split(',')[0].trim().toLowerCase();
+  const top = [...counts.entries()]
+    .filter(([c]) => c.toLowerCase() !== baseCity)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, max)
+    .map(([c]) => (state ? `${c}, ${state}` : c));
+  return [...new Set([base, ...top].filter(Boolean))];
+}
+
+// Drops hotels known to be outside the radius; keeps ones with no location yet.
+function withinRadius(hotels, point, radiusKm) {
+  return hotels.filter((h) => h.lat == null || haversineKm(point, h) <= radiusKm);
+}
+
+return { stateOf, nearbyAreas, withinRadius };
 })();
 
 const __features = (() => {
@@ -366,6 +418,7 @@ const __sources = (() => {
 // `call(tool, args) => payload` so the server (direct HTTP) and the phone
 // page (claude.ai connectors) share the exact same logic.
 const { makeOffer, parseMoney, nightsBetween } = __merge;
+const { stateOf } = __near;
 
 const TA_VERSION_FALLBACK = 'V2026_0327';
 const CHILD_AGE = 8; // ages are required by some sites; we only ask for a count
@@ -393,7 +446,10 @@ async function searchSuper(call, stay) {
   // Super.com only understands bare city names ("Scottsdale", not "Scottsdale, AZ").
   const bare = stay.q.split(',')[0].trim();
   if (!p?.hotels?.length && bare && bare !== stay.q) p = await call('get_rates_for_city', { ...args, city_name: bare });
-  return (p?.hotels || []).map((h) => ({
+  // A bare town name can match the wrong state (Independence, OH vs MO), so keep the asked-for state.
+  const state = stateOf(stay.q);
+  const hotels = (p?.hotels || []).filter((h) => !state || !h.state || h.state.toUpperCase() === state);
+  return hotels.map((h) => ({
     source: 'super',
     sourceLabel: 'Super.com',
     name: h.name,
@@ -928,6 +984,7 @@ const EXAMPLE = {"stay":{"q":"Scottsdale, AZ","checkIn":"2026-10-20","checkOut":
   const { searchSuper, searchBooking, searchTripadvisor, tripadvisorDetails, tripadvisorGeocode, tripadvisorVersion, superLowest, bookingAnswer, HEAT_QUESTION, SOURCE_INFO } = __sources;
   const { analyzeReviews } = __poolHeat;
   const { forecastPrice } = __forecast;
+  const { nearbyAreas, withinRadius } = __near;
 
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -989,6 +1046,22 @@ const EXAMPLE = {"stay":{"q":"Scottsdale, AZ","checkIn":"2026-10-20","checkOut":
   $('#q').value = store.get('q', '');
   $('#unit').value = store.get('unit', 'mi');
   for (const id of ['w-pool', 'w-hottub', 'w-heated']) $('#' + id).checked = store.get(id, $('#' + id).checked);
+  // Destination vs. near-a-place search (claude.ai pages can't read GPS, so the place is typed).
+  S.mode = store.get('mode', 'dest');
+  $('#near-q').value = store.get('nearPlace', '');
+  $('#near-radius').value = String(store.get('radius', 15));
+  function setMode(mode) {
+    S.mode = mode;
+    store.set('mode', mode);
+    document.querySelectorAll('input[name=mode]').forEach((r) => { r.checked = r.value === mode; });
+    $('#dest-f').hidden = mode !== 'dest';
+    $('#near-f').hidden = mode !== 'near';
+    $('#q').required = mode === 'dest';
+    $('#near-q').required = mode === 'near';
+  }
+  document.querySelectorAll('input[name=mode]').forEach((r) => r.addEventListener('change', () => setMode(r.value)));
+  $('#near-radius').addEventListener('change', () => store.set('radius', Number($('#near-radius').value)));
+  setMode(S.mode);
   renderOrigin();
 
   (async () => {
@@ -1005,9 +1078,10 @@ const EXAMPLE = {"stay":{"q":"Scottsdale, AZ","checkIn":"2026-10-20","checkOut":
   $('#search').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!S.mcp) { $('#status').innerHTML = '<span class="bad">Open this page in claude.ai (signed in) to search live prices.</span>'; return; }
+    if (S.mode === 'near' && !$('#near-q').value.trim()) { $('#status').innerHTML = '<span class="bad">Type a city or address to search near.</span>'; return; }
     const stay = { q: $('#q').value.trim(), checkIn: $('#checkIn').value, checkOut: $('#checkOut').value, adults: Number($('#adults').value) || 2, children: Number($('#children').value) || 0, currency: 'USD' };
     if (stay.checkOut <= stay.checkIn) { $('#status').innerHTML = '<span class="bad">Check-out must be after check-in.</span>'; return; }
-    store.set('q', stay.q);
+    if (S.mode !== 'near') store.set('q', stay.q);
     const btn = $('#go');
     btn.disabled = true;
     btn.textContent = 'Searching… (10–30 s)';
@@ -1015,25 +1089,70 @@ const EXAMPLE = {"stay":{"q":"Scottsdale, AZ","checkIn":"2026-10-20","checkOut":
     try {
       if (S.perms) await S.perms.request(SERVERS.map((id) => 'mcp:' + SOURCE_INFO[id].server)).catch(() => {});
       const version = await taVersion();
-      const jobs = [
-        searchSuper(caller('super'), stay),
-        searchBooking(caller('booking'), stay),
-        searchTripadvisor(caller('tripadvisor'), stay, { version }),
-      ];
-      const settled = await Promise.allSettled(jobs);
+      const near = S.mode === 'near';
+      let areas = [stay.q];
+      let point = null;
+      let radiusMi = 0;
+      let bookingNear = null;
+      if (near) {
+        // Booking.com searches a radius; the towns its hotels are in are then searched on the other sites.
+        const place = $('#near-q').value.trim();
+        stay.q = place;
+        store.set('nearPlace', place);
+        radiusMi = Number($('#near-radius').value);
+        $('#status').textContent = `Finding ${place}…`;
+        point = await tripadvisorGeocode(caller('tripadvisor'), place, { version });
+        if (!point) throw new Error(`Couldn't find “${place}”. Try adding the state, e.g. “Maple Heights, OH”.`);
+        point = { lat: point.lat, lng: point.lng, name: place };
+        $('#status').textContent = `Searching within ${radiusMi} mi of ${place}…`;
+        bookingNear = await searchBooking(caller('booking'), { ...stay, near: { lat: point.lat, lng: point.lng, radiusKm: radiusMi * KM_PER_MI } })
+          .then((list) => ({ list }), (error) => ({ list: [], error }));
+        areas = nearbyAreas(bookingNear.list, { base: place, point, radiusKm: radiusMi * KM_PER_MI });
+      }
+      const jobs = [];
+      for (const q of areas) {
+        jobs.push(['super', searchSuper(caller('super'), { ...stay, q })]);
+        jobs.push(['tripadvisor', searchTripadvisor(caller('tripadvisor'), { ...stay, q }, { version })]);
+      }
+      jobs.push(['booking', near
+        ? (bookingNear.error ? Promise.reject(bookingNear.error) : Promise.resolve(bookingNear.list))
+        : searchBooking(caller('booking'), stay)]);
+      const settled = await Promise.allSettled(jobs.map(([, p]) => p));
       const listings = [];
-      const lines = [];
+      const bySource = {};
       settled.forEach((r, i) => {
-        const label = SOURCE_INFO[SERVERS[i]].label;
-        if (r.status === 'rejected') { lines.push(`<span class="${r.reason?.code === 'server_not_connected' ? 'warn' : 'bad'}">${esc(explain(r.reason, label))}</span>`); return; }
-        const list = SERVERS[i] === 'tripadvisor' ? r.value.listings : r.value;
-        if (SERVERS[i] === 'tripadvisor') S.center = r.value.center || S.center;
+        const id = jobs[i][0];
+        const src = (bySource[id] ||= { count: 0, ok: false, error: null });
+        if (r.status === 'rejected') { src.error ||= r.reason; return; }
+        const list = id === 'tripadvisor' ? r.value.listings : r.value;
+        if (id === 'tripadvisor' && !point) S.center = r.value.center || S.center;
         listings.push(...list);
-        lines.unshift(`${esc(label)}: <b>${list.length}</b> hotels`);
+        src.ok = true;
+        src.count += list.length;
       });
+      const lines = [];
+      for (const id of SERVERS) {
+        const src = bySource[id];
+        const label = SOURCE_INFO[id].label;
+        if (src?.ok) lines.push(`${esc(label)}: <b>${src.count}</b> hotels`);
+        else if (src) lines.push(`<span class="${src.error?.code === 'server_not_connected' ? 'warn' : 'bad'}">${esc(explain(src.error, label))}</span>`);
+      }
+      if (near) lines.push(`Searched ${esc(areas.join(', '))} and a ${radiusMi} mi radius`);
+      const settledAll = Object.values(bySource);
+      const seen = new Set();
+      const unique = listings.filter((l) => { const k = l.source + '|' + l.name; return !seen.has(k) && seen.add(k); });
       const nights = nightsBetween(stay.checkIn, stay.checkOut);
-      const hotels = merge(listings, nights).filter((h) => h.best);
-      if (!hotels.length && settled.every((r) => r.status === 'rejected')) {
+      let hotels = merge(unique, nights).filter((h) => h.best);
+      if (near) {
+        hotels = withinRadius(hotels, point, radiusMi * KM_PER_MI);
+        S.center = point;
+        S.origin = point;
+        store.set('origin', point);
+        $('#unit').value = 'mi';
+        store.set('unit', 'mi');
+        $('#maxdist').value = String(radiusMi);
+      }
+      if (!hotels.length && settledAll.every((x) => !x.ok)) {
         $('#status').innerHTML = lines.map((l) => `<div>${l}</div>`).join('');
         return;
       }

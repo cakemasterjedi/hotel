@@ -106,3 +106,27 @@ test('turns Tripadvisor partner codes into site names', async () => {
   const { listings } = await searchTripadvisor(async () => fake, stay, {});
   assert.equal(listings[0].offers[0].source, 'Booking.com');
 });
+
+test('drops Super.com hotels from the wrong state for "Town, ST" searches', async () => {
+  const payload = { hotels: [
+    { name: 'A', state: 'MO', price_after_tax: 100, amenities: [] },
+    { name: 'B', state: 'OH', price_after_tax: 90, amenities: [] },
+  ] };
+  const list = await searchSuper(async () => payload, { ...stay, q: 'Independence, OH' });
+  assert.deepEqual(list.map((l) => l.name), ['B']);
+  assert.equal((await searchSuper(async () => payload, { ...stay, q: 'Independence' })).length, 2);
+});
+
+test('near-me helpers pick nearby towns and enforce the radius', async () => {
+  const { nearbyAreas, withinRadius } = await import('../src/shared/near.js');
+  const point = { lat: 41.41387, lng: -81.56594 };
+  const listings = [
+    { city: 'Independence', lat: 41.393, lng: -81.649 },
+    { city: 'Independence', lat: 41.394, lng: -81.648 },
+    { city: 'Orange', lat: 41.456, lng: -81.489 },
+    { city: 'Columbus', lat: 39.96, lng: -82.99 }, // far away: ignored
+  ];
+  assert.deepEqual(nearbyAreas(listings, { base: 'Maple Heights, OH', point, radiusKm: 24 }), ['Maple Heights, OH', 'Independence, OH', 'Orange, OH']);
+  const kept = withinRadius([{ lat: 41.39, lng: -81.65 }, { lat: 39.96, lng: -82.99 }, { lat: null }], point, 24);
+  assert.equal(kept.length, 2);
+});

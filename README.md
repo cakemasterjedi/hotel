@@ -6,6 +6,7 @@ A self-hosted web app that finds the cheapest hotel rates across booking sites:
 - The same hotel from different sites is merged into **one card**, with the cheapest price on top and every site's price one tap away
 - **Price per night and total price** side by side, with a note on whether each site includes tax
 - **Pool / hot tub / heated pool are highlights, not filters.** Cheap hotels without them still show; hotels that have them get a blue border and a "✓ Has pool + hot tub" tag
+- **Near me search:** find hotels within 5–50 miles of you. On the self-hosted app, "📍 Locate me" uses your phone's GPS on an https address and falls back to an approximate location from your internet connection on plain http. You can also type any city or address. Booking.com searches the radius, the nearby towns it finds are searched on the other sites, and anything outside the radius is dropped.
 - **Distance** from your location (📍) or any city/address you type, with sort by distance and a max-distance limit
 - **"Is the pool heated?"** reads recent guest reviews ("pool was freezing", "84 degrees", "hot tub lukewarm"…), asks Booking.com's hotel Q&A, and shows the quotes it based the answer on
 - **"If you wait"** estimate: how high the price could go tomorrow and in a week, the chance it rises, and a book-now / can-wait suggestion
@@ -20,7 +21,7 @@ A self-hosted web app that finds the cheapest hotel rates across booking sites:
 1. In claude.ai, go to **Settings → Connectors** and add **Super.com**, **Booking.com** and **Tripadvisor** (free, no login).
 2. Open the link above in the Claude app or a browser where you're signed in. The first search asks you to allow the three connectors for the page.
 
-The phone page has everything except the watchlist. Its forecast history stays on that phone. "My location" doesn't work there, so type your city instead.
+The phone page has everything except the watchlist. Its forecast history stays on that phone. Pick "Near a place" and type your city or address with a radius; claude.ai pages can't read GPS.
 
 ## Run it on TrueNAS SCALE
 

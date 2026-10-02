@@ -3,6 +3,7 @@
 // `call(tool, args) => payload` so the server (direct HTTP) and the phone
 // page (claude.ai connectors) share the exact same logic.
 import { makeOffer, parseMoney, nightsBetween } from './merge.js';
+import { stateOf } from './near.js';
 
 export const TA_VERSION_FALLBACK = 'V2026_0327';
 const CHILD_AGE = 8; // ages are required by some sites; we only ask for a count
@@ -30,7 +31,10 @@ export async function searchSuper(call, stay) {
   // Super.com only understands bare city names ("Scottsdale", not "Scottsdale, AZ").
   const bare = stay.q.split(',')[0].trim();
   if (!p?.hotels?.length && bare && bare !== stay.q) p = await call('get_rates_for_city', { ...args, city_name: bare });
-  return (p?.hotels || []).map((h) => ({
+  // A bare town name can match the wrong state (Independence, OH vs MO), so keep the asked-for state.
+  const state = stateOf(stay.q);
+  const hotels = (p?.hotels || []).filter((h) => !state || !h.state || h.state.toUpperCase() === state);
+  return hotels.map((h) => ({
     source: 'super',
     sourceLabel: 'Super.com',
     name: h.name,

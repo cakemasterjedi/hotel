@@ -3,8 +3,9 @@ import path from 'node:path';
 import express from 'express';
 import { config } from './config.js';
 import { db, cacheGet, cacheSet, recordSnapshot, getHistory } from './db.js';
-import { searchAll, hotelPrices, hotelHeatSources, activeSources } from './search.js';
-import { geocode, geocodeHotel } from './geocode.js';
+import { searchAll, searchNear, hotelPrices, hotelHeatSources, activeSources } from './search.js';
+import { geocode, geocodeHotel, reverseGeocode, locateIp } from './geocode.js';
+import { KM_PER_MI } from './shared/geo.js';
 import { analyzeReviews } from './shared/poolHeat.js';
 import { forecastPrice } from './shared/forecast.js';
 import { detectFeatures } from './shared/features.js';
@@ -110,14 +111,43 @@ app.post('/api/coords', wrap(async (req, res) => {
   res.json(out);
 }));
 
+// Where is the user? Approximate, from their internet connection (used when
+// the browser can't share GPS, e.g. on plain http).
+app.get('/api/whereami', wrap(async (req, res) => {
+  const ip = String(req.headers['cf-connecting-ip'] || req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const hit = await locateIp(ip).catch(() => null);
+  if (!hit) throw httpError(502, "Couldn't work out your location. Type a city instead.");
+  res.json(hit);
+}));
+
+app.get('/api/reverse', wrap(async (req, res) => {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) throw httpError(400, 'lat and lng are required');
+  res.json({ name: (await reverseGeocode(lat, lng).catch(() => null)) || `${lat.toFixed(3)}, ${lng.toFixed(3)}` });
+}));
+
+function nearParams(q) {
+  const lat = Number(q.nearLat);
+  const lng = Number(q.nearLng);
+  if (!q.nearLat || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  const radiusMi = Math.min(100, Math.max(1, Number(q.radiusMi) || 15));
+  // Rounded so nearby repeat searches share the cache.
+  return { lat: Math.round(lat * 100) / 100, lng: Math.round(lng * 100) / 100, radiusKm: radiusMi * KM_PER_MI, label: String(q.nearName || '').slice(0, 100) };
+}
+
 app.get('/api/search', wrap(async (req, res) => {
-  const stay = stayParams(req.query);
+  const near = nearParams(req.query);
+  const stay = stayParams(near ? { ...req.query, q: req.query.q || near.label || 'near me' } : req.query);
   if (!stay.q) throw httpError(400, 'Enter a destination');
-  const key = `search:${config.demo}:${JSON.stringify(stay)}`;
+  const key = `search:${config.demo}:${JSON.stringify(stay)}:${JSON.stringify(near)}`;
   let result = cacheGet(key);
   const cached = !!result;
   if (!result) {
-    result = await searchAll(stay);
+    if (near && !near.label) near.label = (await reverseGeocode(near.lat, near.lng).catch(() => null)) || stay.q;
+    result = near
+      ? await searchNear(stay, { point: near, radiusKm: near.radiusKm, label: near.label })
+      : await searchAll(stay);
     if (result.hotels.length) cacheSet(key, result, config.searchCacheHours * 3600_000);
     for (const h of result.hotels) snapshot(h, stay);
   }

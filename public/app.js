@@ -1,4 +1,5 @@
 import { haversineKm, formatDistance, KM_PER_MI } from './shared/geo.js';
+import { attachAutocomplete } from './shared/autocomplete.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const state = {
@@ -142,6 +143,18 @@ $('#near-q').addEventListener('change', () => nearFromText());
 
 setMode(state.mode);
 setNear(state.near);
+
+// ---------- location autofill ----------
+const suggest = (q) => api(`/api/suggest?q=${encodeURIComponent(q)}`);
+attachAutocomplete(form.q, { source: suggest });
+attachAutocomplete($('#near-q'), {
+  source: suggest,
+  onPick: (p) => { setNear({ lat: p.lat, lng: p.lng, name: p.label, approximate: false }); $('#near-q').value = ''; },
+});
+attachAutocomplete($('#origin-q'), {
+  source: suggest,
+  onPick: (p) => { setOrigin({ lat: p.lat, lng: p.lng, name: p.label }); $('#origin-q').value = ''; },
+});
 
 // ---------- search ----------
 form.addEventListener('submit', async (e) => {
@@ -339,8 +352,19 @@ function hotelCard(h) {
   const el = $('#hotel-tpl').content.firstElementChild.cloneNode(true);
   el.dataset.key = h.key;
   const thumb = $('.thumb', el);
-  if (h.image) thumb.style.backgroundImage = `url("${encodeURI(h.image)}")`;
-  else { thumb.textContent = '🏨'; thumb.classList.add('empty'); }
+  // Card picture: try each listing photo in turn, fall back to an icon.
+  const pics = [...new Set([h.image, ...(h.images || [])].filter(Boolean))];
+  const showPic = (i) => {
+    if (i >= pics.length) { thumb.innerHTML = ''; thumb.textContent = '🏨'; thumb.classList.add('empty'); return; }
+    const img = new Image();
+    img.alt = h.name;
+    img.loading = 'lazy';
+    img.referrerPolicy = 'no-referrer';
+    img.onerror = () => showPic(i + 1);
+    img.src = pics[i];
+    thumb.replaceChildren(img);
+  };
+  showPic(0);
 
   $('.name', el).innerHTML = h.link ? `<a href="${esc(h.link)}" target="_blank" rel="noopener">${esc(h.name)}</a>` : esc(h.name);
   const d = distanceKm(h);
@@ -356,6 +380,11 @@ function hotelCard(h) {
   renderBadges(el, h);
   renderForecast($('.forecast', el), h.forecast);
 
+  const btnPhotos = $('.act-photos', el);
+  btnPhotos.addEventListener('click', () => togglePhotos(el, h, btnPhotos));
+  thumb.addEventListener('click', () => togglePhotos(el, h, btnPhotos));
+  thumb.setAttribute('role', 'button');
+  thumb.title = 'Show photos';
   const btnPrices = $('.act-prices', el);
   btnPrices.addEventListener('click', () => togglePrices(el, h, btnPrices));
   const btnHeat = $('.act-heat', el);
@@ -416,6 +445,38 @@ function renderForecast(box, fc) {
     <span class="advice"><b>${esc(fc.advice)}</b></span>
     <details><summary>Why? (confidence: ${fc.confidence})</summary><ul>${fc.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
     Estimates are statistical guesses, not guarantees. "Up to" is the 90th-percentile scenario.</details>`;
+}
+
+// ---------- photos ----------
+async function togglePhotos(el, h, btn) {
+  const panel = $('.panel-photos', el);
+  if (!panel.hidden) { panel.hidden = true; return; }
+  panel.hidden = false;
+  if (h.photos) { showPhotos(panel, h); return; }
+  panel.innerHTML = '<p class="muted">Loading photos…</p>';
+  btn.disabled = true;
+  try {
+    h.photos = (await api('/api/hotel/photos', { stay: state.stay, hotel: h })).photos;
+    showPhotos(panel, h);
+  } catch (err) {
+    panel.innerHTML = `<p class="error">${esc(err.message)}</p>`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showPhotos(panel, h) {
+  if (!h.photos.length) {
+    panel.innerHTML = `<p class="muted">No photos found.${h.link ? ` <a href="${esc(h.link)}" target="_blank" rel="noopener">See the hotel's page →</a>` : ''}</p>`;
+    return;
+  }
+  const guest = h.photos.filter((p) => p.kind === 'guest').length;
+  panel.innerHTML = `<div class="gallery">${h.photos.map((p) => `
+    <a href="${esc(p.full)}" target="_blank" rel="noopener" title="${esc(p.caption || h.name)}">
+      <img src="${esc(p.thumb)}" alt="${esc(p.caption || `Photo of ${h.name}`)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentElement.hidden = true">
+      ${p.kind === 'guest' ? '<span class="tag">guest</span>' : ''}
+    </a>`).join('')}</div>
+    <p class="muted small-text">${h.photos.length} photos${guest ? `, ${guest} from guests` : ''} · tap one to open it full size</p>`;
 }
 
 // ---------- per-site prices ----------

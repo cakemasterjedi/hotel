@@ -66,3 +66,21 @@ export async function locateIp(ip) {
   if (!j.success) return null;
   return { lat: j.latitude, lng: j.longitude, name: [j.city, j.region_code || j.region].filter(Boolean).join(', '), approximate: true };
 }
+
+// Address / place autocomplete via Photon (OpenStreetMap), for text the
+// bundled town list doesn't cover (street addresses, landmarks).
+export async function suggestAddresses(q, { limit = 5 } = {}) {
+  const params = new URLSearchParams({ q, limit: String(limit), lang: 'en' });
+  // US only (the booking sources here are US-focused).
+  params.set('bbox', '-170,18,-60,72');
+  const res = await fetch(`https://photon.komoot.io/api/?${params}`, { headers: { 'User-Agent': 'HotelHunter/1.0 (self-hosted)' }, signal: AbortSignal.timeout(6000) });
+  if (!res.ok) throw new Error(`Photon HTTP ${res.status}`);
+  return ((await res.json()).features || []).map((f) => {
+    const p = f.properties || {};
+    const [lng, lat] = f.geometry?.coordinates || [];
+    const first = p.name || (p.housenumber && p.street ? `${p.housenumber} ${p.street}` : p.street);
+    const state = US_STATES[p.state] || p.state;
+    const label = [...new Set([first, p.city || p.town || p.village, state].filter(Boolean))].join(', ');
+    return lat != null && label ? { label, lat, lng } : null;
+  }).filter(Boolean);
+}

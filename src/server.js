@@ -3,8 +3,9 @@ import path from 'node:path';
 import express from 'express';
 import { config } from './config.js';
 import { db, cacheGet, cacheSet, recordSnapshot, getHistory } from './db.js';
-import { searchAll, searchNear, hotelPrices, hotelHeatSources, activeSources } from './search.js';
-import { geocode, geocodeHotel, reverseGeocode, locateIp } from './geocode.js';
+import { searchAll, searchNear, hotelPrices, hotelHeatSources, hotelPhotos, activeSources } from './search.js';
+import { geocode, geocodeHotel, reverseGeocode, locateIp, suggestAddresses } from './geocode.js';
+import { suggestPlaces } from './shared/places.js';
 import { KM_PER_MI } from './shared/geo.js';
 import { analyzeReviews } from './shared/poolHeat.js';
 import { forecastPrice } from './shared/forecast.js';
@@ -56,6 +57,7 @@ function hotelParam(h) {
       superName: refs.superName ? String(refs.superName).slice(0, 200) : undefined,
     },
     offers: Array.isArray(h.offers) ? h.offers.slice(0, 50) : [],
+    images: (Array.isArray(h.images) ? h.images : []).filter((u) => typeof u === 'string' && /^https:\/\//.test(u)).slice(0, 5),
     features: h.features || {},
     nights: Number(h.nights) || 1,
   };
@@ -109,6 +111,37 @@ app.post('/api/coords', wrap(async (req, res) => {
   };
   await Promise.all([worker(), worker(), worker()]);
   res.json(out);
+}));
+
+// Location autofill: bundled US towns instantly, plus street addresses and
+// landmarks from OpenStreetMap when the text looks like more than a town.
+app.get('/api/suggest', wrap(async (req, res) => {
+  const q = String(req.query.q || '').trim().slice(0, 100);
+  const local = suggestPlaces(q, { limit: 6 });
+  let remote = [];
+  if (q.length >= 4 && !config.demo && (local.length < 3 || /\d/.test(q))) {
+    const key = `suggest:${q.toLowerCase()}`;
+    remote = cacheGet(key);
+    if (!remote) {
+      remote = await suggestAddresses(q).catch(() => null);
+      if (remote) cacheSet(key, remote, 30 * 86_400_000); // never cache a failed lookup
+    }
+    remote ||= [];
+  }
+  const seen = new Set(local.map((s) => s.label.toLowerCase()));
+  res.json([...local, ...remote.filter((r) => !seen.has(r.label.toLowerCase()) && seen.add(r.label.toLowerCase()))].slice(0, 8));
+}));
+
+app.post('/api/hotel/photos', wrap(async (req, res) => {
+  const stay = stayParams(req.body.stay || {});
+  const hotel = hotelParam(req.body.hotel);
+  const key = `photos:${config.demo}:${hotel.key}`;
+  let photos = cacheGet(key);
+  if (!photos) {
+    photos = await hotelPhotos(stay, hotel);
+    if (photos.length) cacheSet(key, photos, 7 * 86_400_000);
+  }
+  res.json({ photos });
 }));
 
 // Where is the user? Approximate, from their internet connection (used when

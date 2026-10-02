@@ -1,4 +1,5 @@
 :root {
+  --ac-bg: #1a1f28; --ac-text: #e6e9ef; --ac-border: #2b3240; --ac-active: #24324a; --ac-muted: #98a0b3;
   /* Dark is the default; the 🌙/☀️ button switches to light. */
   --bg: #11141a;
   --card: #1a1f28;
@@ -18,6 +19,7 @@
   color-scheme: dark;
 }
 :root[data-theme="light"] {
+  --ac-bg: #ffffff; --ac-text: #1c2230; --ac-border: #e2e5eb; --ac-active: #e9f3ff; --ac-muted: #687085;
   --bg: #f5f6f8;
   --card: #ffffff;
   --text: #1c2230;
@@ -156,3 +158,11 @@ button.small { padding: 6px 10px; font-size: 13px; }
 .near-row input { flex: 1 1 180px; }
 .near-note { min-height: 1em; }
 .near-note.err { color: var(--bad); }
+
+/* photos */
+.thumb { cursor: pointer; overflow: hidden; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery { display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+.gallery a { position: relative; flex: 0 0 auto; scroll-snap-align: start; }
+.gallery img { display: block; height: 150px; width: 225px; object-fit: cover; border-radius: 8px; background: var(--chip); color: transparent; }
+.gallery .tag { position: absolute; left: 6px; bottom: 6px; font-size: 11px; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,.6); color: #fff; }

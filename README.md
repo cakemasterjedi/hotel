@@ -6,6 +6,8 @@ A self-hosted web app that finds the cheapest hotel rates across booking sites:
 - The same hotel from different sites is merged into **one card**, with the cheapest price on top and every site's price one tap away
 - **Price per night and total price** side by side, with a note on whether each site includes tax
 - **Pool / hot tub / heated pool are highlights, not filters.** Cheap hotels without them still show; hotels that have them get a blue border and a "✓ Has pool + hot tub" tag
+- **Location autofill** as you type: US towns appear instantly from a built-in list (GeoNames, CC BY 4.0), and the self-hosted app also suggests street addresses and landmarks from OpenStreetMap
+- **Hotel photos:** each card shows a picture, and "📷 Photos" opens a gallery of the hotel's Tripadvisor photos (hotel and guest photos) plus the booking sites' listing photos. On the phone page, "Photos ↗" opens the hotel's page instead, because claude.ai pages can't load outside images.
 - **Near me search:** find hotels within 5–50 miles of you. On the self-hosted app, "📍 Locate me" uses your phone's GPS on an https address and falls back to an approximate location from your internet connection on plain http. You can also type any city or address. Booking.com searches the radius, the nearby towns it finds are searched on the other sites, and anything outside the radius is dropped.
 - **Distance** from your location (📍) or any city/address you type, with sort by distance and a max-distance limit
 - **"Is the pool heated?"** reads recent guest reviews ("pool was freezing", "84 degrees", "hot tub lukewarm"…), asks Booking.com's hotel Q&A, and shows the quotes it based the answer on
@@ -104,6 +106,8 @@ src/server.js             API, static files, watchlist scheduler
 src/search.js             runs all sites in parallel and merges results
 src/mcpClient.js          tiny client for the sites' MCP servers
 src/shared/               browser-safe logic shared by the server, the web UI and the phone page:
+  places.js, usPlaces.js  location autofill (US towns; rebuild with scripts/build-places.js)
+  autocomplete.js         the suggestion dropdown
   sources.js              Super.com / Booking.com / Tripadvisor adapters
   merge.js                matches the same hotel across sites
   features.js             pool / hot tub detection from amenity lists

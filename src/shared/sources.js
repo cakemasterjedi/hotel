@@ -135,6 +135,29 @@ const partnerFromUrl = (u) => {
   return p.replace(/Hotels$/, '').replace(/([a-z])([A-Z])/g, '$1 $2');
 };
 
+// Tripadvisor photo URLs come as templates with {width}/{height} placeholders.
+function sized(template, w, h) {
+  return template ? template.replace('{width}', w).replace('{height}', h) : null;
+}
+
+function taPhotos(p) {
+  const out = [];
+  const seen = new Set();
+  const add = (template, sizes, caption, kind) => {
+    const largest = (sizes || []).filter((s) => s.width > 0).sort((a, b) => b.width - a.width)[0]?.url;
+    const thumb = sized(template, 360, 240) || largest;
+    const full = sized(template, 1200, 800) || largest;
+    const id = (full || '').split('?')[0];
+    if (!thumb || seen.has(id)) return;
+    seen.add(id);
+    out.push({ thumb, full, caption: caption || null, kind });
+  };
+  for (const i of p?.hotel?.images || []) add(i.urlTemplate, null, i.caption, 'hotel');
+  for (const i of p?.carouselPhotos || []) add(i.photoSizeDynamic?.urlTemplate, i.photoSizes, i.caption, 'hotel');
+  for (const i of p?.travelerPhotos || []) add(i.photoSizeDynamic?.urlTemplate, i.photoSizes, i.caption, 'guest');
+  return out.slice(0, 18);
+}
+
 function taContext(version) {
   return { mcpServerVersion: { version: version || TA_VERSION_FALLBACK }, requestContext: { clientType: 'MOBILE' } };
 }
@@ -158,7 +181,7 @@ export async function searchTripadvisor(call, stay, { version, limit = 30 } = {}
     const offer = h.metaResult?.primaryOffers?.[0] || h.priceInfo;
     const partner = partnerFromUrl(offer?.commerceUrl) || 'Tripadvisor partner';
     const sizes = h.thumbnail?.photoSizes || [];
-    const img = sizes.find((s) => s.width >= 250) || sizes.at(-1);
+    const img = { url: sized(h.thumbnail?.photoSizeDynamic?.urlTemplate, 480, 320) || (sizes.find((s) => s.width >= 250) || sizes.at(-1))?.url };
     return {
       source: 'tripadvisor',
       sourceLabel: 'Tripadvisor',
@@ -188,6 +211,7 @@ export async function tripadvisorDetails(call, stay, { hotelId, hotelName, versi
     guests: Number(stay.adults) || 2,
     includeReviews: true,
     includeAmenities: true,
+    includePhotos: true,
     ...taContext(version),
   };
   if (hotelId) args.hotelId = Number(hotelId);
@@ -213,6 +237,7 @@ export async function tripadvisorDetails(call, stay, { hotelId, hotelName, versi
     offers,
     reviews,
     summary: typeof p?.aiReviewSummary === 'string' ? p.aiReviewSummary : null,
+    photos: taPhotos(p),
   };
 }
 

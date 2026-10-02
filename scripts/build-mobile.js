@@ -8,7 +8,7 @@ import { searchSuper, searchBooking, searchTripadvisor } from '../src/shared/sou
 import { merge, nightsBetween } from '../src/shared/merge.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const MODULES = ['geo', 'near', 'features', 'merge', 'sources', 'poolHeat', 'forecast']; // dependency order
+const MODULES = ['geo', 'near', 'features', 'merge', 'sources', 'poolHeat', 'forecast', 'usPlaces', 'places', 'autocomplete']; // dependency order
 
 function inline(name) {
   let src = fs.readFileSync(path.join(root, 'src/shared', `${name}.js`), 'utf8');

@@ -13,6 +13,7 @@
   --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --radius: 14px;
+  --ac-bg: #13222a; --ac-text: #e4eef0; --ac-border: #24363e; --ac-active: #12333a; --ac-muted: #93a7ae;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -74,6 +75,7 @@ button:disabled { opacity: .6; cursor: progress; }
 .fc ul { margin: 4px 0; padding-left: 18px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .actions button { font-size: 13px; padding: 8px 11px; }
+.btn-link { font: 600 13px var(--font-body); padding: 8px 11px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); text-decoration: none; }
 .panel { border-top: 1px solid var(--line); padding-top: 10px; font-size: 14px; display: grid; gap: 8px; }
 .tbl { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -159,7 +161,7 @@ a { color: var(--water); }
 
   <div id="summary" class="summary"></div>
   <div id="results" class="wrap" style="gap:12px"></div>
-  <p class="note">Prices come live from each site; taxes are shown differently by each, so check the tax note under each price. “If you wait” figures are statistical estimates, not guarantees. Uses your Super.com, Booking.com and Tripadvisor connectors (Settings → Connectors in claude.ai; free, no login).</p>
+  <p class="note">Prices come live from each site; taxes are shown differently by each, so check the tax note under each price. “If you wait” figures are statistical estimates, not guarantees. Uses your Super.com, Booking.com and Tripadvisor connectors (Settings → Connectors in claude.ai; free, no login). Hotel photos open on the hotel's page, because claude.ai pages can't show outside images. Town list: GeoNames, CC BY 4.0.</p>
 </div>
 
 <script>
@@ -173,6 +175,8 @@ const EXAMPLE = /*__EXAMPLE__*/null;
   const { analyzeReviews } = __poolHeat;
   const { forecastPrice } = __forecast;
   const { nearbyAreas, withinRadius } = __near;
+  const { suggestPlaces } = __places;
+  const { attachAutocomplete } = __autocomplete;
 
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -250,6 +254,29 @@ const EXAMPLE = /*__EXAMPLE__*/null;
   document.querySelectorAll('input[name=mode]').forEach((r) => r.addEventListener('change', () => setMode(r.value)));
   $('#near-radius').addEventListener('change', () => store.set('radius', Number($('#near-radius').value)));
   setMode(S.mode);
+
+  // Location autofill from the built-in US town list plus places you've used.
+  const recent = () => store.get('recentPlaces', []);
+  function remember(p) { store.set('recentPlaces', [p, ...recent().filter((r) => r.label !== p.label)].slice(0, 8)); }
+  function placeSource(q) {
+    const nq = q.toLowerCase();
+    const mine = recent().filter((r) => r.label.toLowerCase().startsWith(nq));
+    const towns = suggestPlaces(q, { limit: 6 }).filter((t) => !mine.some((m) => m.label === t.label));
+    return Promise.resolve([...mine, ...towns].slice(0, 7));
+  }
+  attachAutocomplete($('#q'), { source: placeSource, onPick: remember });
+  attachAutocomplete($('#near-q'), { source: placeSource, onPick: (p) => { S.nearPick = p; remember(p); } });
+  attachAutocomplete($('#origin-q'), {
+    source: placeSource,
+    onPick: (p) => {
+      remember(p);
+      S.origin = { lat: p.lat, lng: p.lng, name: p.label };
+      store.set('origin', S.origin);
+      $('#origin-q').value = '';
+      renderOrigin();
+      render();
+    },
+  });
   renderOrigin();
 
   (async () => {
@@ -289,7 +316,8 @@ const EXAMPLE = /*__EXAMPLE__*/null;
         store.set('nearPlace', place);
         radiusMi = Number($('#near-radius').value);
         $('#status').textContent = `Finding ${place}…`;
-        point = await tripadvisorGeocode(caller('tripadvisor'), place, { version });
+        // A place picked from the suggestions already has coordinates.
+        point = S.nearPick && S.nearPick.label === place ? S.nearPick : await tripadvisorGeocode(caller('tripadvisor'), place, { version });
         if (!point) throw new Error(`Couldn't find “${place}”. Try adding the state, e.g. “Maple Heights, OH”.`);
         point = { lat: point.lat, lng: point.lng, name: place };
         $('#status').textContent = `Searching within ${radiusMi} mi of ${place}…`;
@@ -496,6 +524,7 @@ const EXAMPLE = /*__EXAMPLE__*/null;
         <details><summary>Why?</summary><ul>${fc.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></details>
       </div>` : ''}
       <div class="actions">
+        ${h.link ? `<a class="btn-link" href="${esc(h.link)}" target="_blank" rel="noopener">Photos ↗</a>` : ''}
         <button type="button" data-act="prices">Compare sites (${h.offers.length})</button>
         ${f.amenitiesKnown && !f.pool && !f.hotTub ? '' : '<button type="button" data-act="heat">Is the pool heated?</button>'}
       </div>

@@ -98,14 +98,40 @@ export async function searchNear(stay, { point, radiusKm, label }) {
   return { ...result, hotels: withinRadius(result.hotels, point, radiusKm), center: { lat: point.lat, lng: point.lng, name: label }, areas };
 }
 
+// Tripadvisor details (prices, reviews, photos) are shared by several
+// buttons, so keep each answer for a few hours in memory.
+const taCache = new Map();
+function taDetails(stay, hotel) {
+  const name = [hotel.name, hotel.city].filter(Boolean).join(', ');
+  const key = `${hotel.refs?.tripadvisorId || name}|${stay.checkIn}|${stay.checkOut}|${stay.adults}`;
+  const hit = taCache.get(key);
+  if (hit && Date.now() - hit.at < 6 * 3600_000) return hit.promise;
+  const promise = tripadvisorVersionLive()
+    .then((version) => tripadvisorDetails(callFor('tripadvisor', 45_000), stay, { hotelId: hotel.refs?.tripadvisorId, hotelName: name, version }));
+  taCache.set(key, { at: Date.now(), promise });
+  promise.catch(() => taCache.delete(key));
+  if (taCache.size > 500) taCache.delete(taCache.keys().next().value);
+  return promise;
+}
+
+// Photos for one hotel: Tripadvisor's gallery and guest photos, plus any listing photo.
+export async function hotelPhotos(stay, hotel) {
+  const photos = [];
+  if (enabled('tripadvisor')) {
+    try { photos.push(...(await taDetails(stay, hotel)).photos); } catch { /* fall back to listing photo */ }
+  }
+  // Hotel gallery first, then the booking sites' listing photos, then guest photos.
+  const listing = (hotel.images || []).filter((url) => url && !photos.some((p) => p.full === url || p.thumb === url))
+    .map((url) => ({ thumb: url, full: url, caption: null, kind: 'hotel' }));
+  return [...photos.filter((p) => p.kind !== 'guest'), ...listing, ...photos.filter((p) => p.kind === 'guest')];
+}
+
 // Every site's price for one hotel ("Compare all sites").
 export async function hotelPrices(stay, hotel) {
   const jobs = [];
   const name = [hotel.name, hotel.city].filter(Boolean).join(', ');
   if (enabled('tripadvisor')) {
-    jobs.push(tripadvisorVersionLive()
-      .then((version) => tripadvisorDetails(callFor('tripadvisor', 45_000), stay, { hotelId: hotel.refs?.tripadvisorId, hotelName: name, version }))
-      .then((d) => d.offers));
+    jobs.push(taDetails(stay, hotel).then((d) => d.offers));
   }
   if (enabled('super')) jobs.push(superLowest(callFor('super', 60_000), stay, hotel.refs?.superName || hotel.name).then((o) => [o]));
   if (enabled('google') && hotel.refs?.serpToken) jobs.push(google.googleOffers(stay, hotel.refs.serpToken));
@@ -120,7 +146,7 @@ export async function hotelHeatSources(stay, hotel) {
   const name = [hotel.name, hotel.city].filter(Boolean).join(', ');
   const jobs = {};
   if (enabled('tripadvisor')) {
-    jobs.tripadvisor = tripadvisorVersionLive().then((version) => tripadvisorDetails(callFor('tripadvisor', 45_000), stay, { hotelId: hotel.refs?.tripadvisorId, hotelName: name, version }));
+    jobs.tripadvisor = taDetails(stay, hotel);
   }
   if (enabled('booking') && hotel.refs?.bookingId) jobs.booking = bookingAnswer(callFor('booking'), hotel.refs.bookingId, HEAT_QUESTION);
   if (enabled('google') && hotel.refs?.serpToken) jobs.google = google.googleReviews(hotel.refs.serpToken);

@@ -124,6 +124,7 @@ function combine(items, nights) {
     reviewCount: totalCount,
     ratings,
     image: first((i) => i.image),
+    images: [...new Set(items.map((i) => i.image).filter(Boolean))],
     link: first((i) => i.link),
     amenities,
     features: { ...detectFeatures(amenities), amenitiesKnown: amenities.length > 0 },

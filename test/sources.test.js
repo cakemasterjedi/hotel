@@ -130,3 +130,26 @@ test('near-me helpers pick nearby towns and enforce the radius', async () => {
   const kept = withinRadius([{ lat: 41.39, lng: -81.65 }, { lat: 39.96, lng: -82.99 }, { lat: null }], point, 24);
   assert.equal(kept.length, 2);
 });
+
+test('suggests places as you type', async () => {
+  const { suggestPlaces } = await import('../src/shared/places.js');
+  assert.equal(suggestPlaces('maple h')[0].label, 'Maple Heights, OH');
+  assert.equal(suggestPlaces('clev')[0].label, 'Cleveland, OH');
+  assert.deepEqual(suggestPlaces('independence, oh').map((p) => p.label), ['Independence, OH']);
+  assert.deepEqual(suggestPlaces('x'), []);
+});
+
+test('collects Tripadvisor photos in usable sizes, hotel photos before guest photos', async () => {
+  const tpl = (n) => ({ urlTemplate: `https://cdn.example/${n}.jpg?w={width}&h={height}&s=1` });
+  const payload = {
+    hotel: { images: [{ ...tpl('a'), caption: 'Pool' }], reviews: [] },
+    carouselPhotos: [{ photoSizeDynamic: tpl('b') }, { photoSizeDynamic: tpl('a') }],
+    travelerPhotos: [{ photoSizeDynamic: tpl('c') }],
+    offers: { metaOffers: [] },
+  };
+  const d = await tripadvisorDetails(async () => payload, stay, { hotelId: 1 });
+  assert.deepEqual(d.photos.map((p) => [p.thumb.split('?')[0].slice(-5), p.kind]), [['a.jpg', 'hotel'], ['b.jpg', 'hotel'], ['c.jpg', 'guest']]);
+  assert.match(d.photos[0].thumb, /w=360&h=240/);
+  assert.match(d.photos[0].full, /w=1200&h=800/);
+  assert.equal(d.photos[0].caption, 'Pool');
+});

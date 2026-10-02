@@ -1,5 +1,6 @@
 import { haversineKm, formatDistance, KM_PER_MI } from './shared/geo.js';
 import { attachAutocomplete } from './shared/autocomplete.js';
+import { pricelineOffer, pricelineSearchLink } from './shared/merge.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const state = {
@@ -428,6 +429,8 @@ function renderBadges(el, h) {
     if (heat.pool.status !== 'unknown') b.push([`Pool: ${heat.pool.label}`, cls[heat.pool.status]]);
     if (heat.hotTub.status !== 'unknown') b.push([`Hot tub: ${heat.hotTub.label}`, cls[heat.hotTub.status]]);
   }
+  const pl = pricelineOffer(h);
+  if (pl) b.push([`Priceline ${money(pl.nightly)}/night`, pl === h.best ? 'good' : 'src']);
   if (h.best.freeCancellation) b.push(['Free cancellation', 'good']);
   if (!f.amenitiesKnown) b.push(['Amenities not listed — check “Compare all sites”', '']);
   for (const s of h.sources) b.push([s, 'src']);
@@ -501,7 +504,9 @@ async function togglePrices(el, h, btn) {
         <td class="num">${money(o.total)}<div class="tax-inline muted">${taxLabel(o)}</div></td>
         <td class="muted col-tax">${taxLabel(o)}</td>
         <td>${o.link ? `<a href="${esc(o.link)}" target="_blank" rel="noopener">Book →</a>` : ''}</td>
-      </tr>`).join('')}</tbody></table></div>
+      </tr>`).join('')}${pricelineOffer(d) ? '' : `<tr class="muted">
+        <td>Priceline</td><td class="num" colspan="2">not in this comparison</td><td class="col-tax"></td>
+        <td><a href="${esc(pricelineSearchLink(h))}" target="_blank" rel="noopener">Find →</a></td></tr>`}</tbody></table></div>
       <p class="muted small-text">Sites show taxes differently, so compare the “Taxes” column too.${d.errors?.length ? ` Some sites didn't answer: ${esc(d.errors.join('; '))}` : ''}</p>`;
   } catch (err) {
     panel.innerHTML = `<p class="error">${esc(err.message)}</p>`;

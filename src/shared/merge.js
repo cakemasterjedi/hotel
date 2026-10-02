@@ -149,3 +149,14 @@ export function addOffers(hotel, offers) {
   hotel.best = hotel.offers[0] || null;
   return hotel;
 }
+
+// Priceline has no public search link we can fill in, so when no site gave
+// us a Priceline price, link to a web search for the hotel on priceline.com.
+export function pricelineOffer(hotel) {
+  return (hotel.offers || []).find((o) => /priceline/i.test(o.source)) || null;
+}
+
+export function pricelineSearchLink(hotel) {
+  const q = ['site:priceline.com', hotel.name, hotel.city].filter(Boolean).join(' ');
+  return `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+}

@@ -169,7 +169,7 @@ a { color: var(--water); }
 const EXAMPLE = /*__EXAMPLE__*/null;
 
 (() => {
-  const { merge, addOffers, nightsBetween, hotelKey } = __merge;
+  const { merge, addOffers, nightsBetween, hotelKey, pricelineOffer, pricelineSearchLink } = __merge;
   const { haversineKm, formatDistance, KM_PER_MI } = __geo;
   const { searchSuper, searchBooking, searchTripadvisor, tripadvisorDetails, tripadvisorGeocode, tripadvisorVersion, superLowest, bookingAnswer, HEAT_QUESTION, SOURCE_INFO } = __sources;
   const { analyzeReviews } = __poolHeat;
@@ -491,6 +491,8 @@ const EXAMPLE = /*__EXAMPLE__*/null;
     if (f.outdoorPool) badges.push(['Outdoor pool', 'perk']);
     if (f.pool && !f.indoorPool && !f.outdoorPool) badges.push(['Pool', 'perk']);
     if (f.hotTub) badges.push(['Hot tub', 'perk']);
+    const pl = pricelineOffer(h);
+    if (pl) badges.push([`Priceline ${money(pl.nightly)}/night`, pl === h.best ? 'good' : 'src']);
     if (f.heatedPoolListed) badges.push(['Heated pool (listed)', 'heat']);
     if (heat) {
       const cls = { warm: 'heat', cold: 'bad', mixed: 'warn' };
@@ -536,17 +538,20 @@ const EXAMPLE = /*__EXAMPLE__*/null;
     return el;
   }
 
-  function priceTable(offers) {
+  function priceTable(offers, h) {
+    const pl = h && !pricelineOffer({ offers })
+      ? `<tr><td>Priceline<small>not in this comparison</small></td><td class="n">—</td><td class="n">—</td><td><a href="${esc(pricelineSearchLink(h))}" target="_blank" rel="noopener">Find</a></td></tr>`
+      : '';
     return `<div class="tbl"><table><thead><tr><th>Site</th><th class="n">Night</th><th class="n">Total</th><th></th></tr></thead><tbody>${
       offers.map((o, i) => `<tr class="${i ? '' : 'best'}"><td>${esc(o.source)}${o.via ? `<small>via ${esc(o.via)}</small>` : ''}</td><td class="n">${money(o.nightly)}</td><td class="n">${money(o.total)}<small>${taxNote(o)}</small></td><td>${o.link ? `<a href="${esc(o.link)}" target="_blank" rel="noopener">Book</a>` : ''}</td></tr>`).join('')
-    }</tbody></table></div>`;
+    }${pl}</tbody></table></div>`;
   }
 
   async function prices(el, h, btn) {
     const panel = el.querySelector('[data-panel="prices"]');
     if (!panel.hidden) { panel.hidden = true; return; }
     panel.hidden = false;
-    panel.innerHTML = priceTable(h.offers);
+    panel.innerHTML = priceTable(h.offers, h);
     if (S.example || !S.mcp) return;
     btn.disabled = true;
     panel.insertAdjacentHTML('beforeend', '<div class="note">Checking more sites…</div>');
@@ -557,7 +562,7 @@ const EXAMPLE = /*__EXAMPLE__*/null;
     ]);
     addOffers(h, settled.filter((r) => r.status === 'fulfilled').flatMap((r) => r.value));
     const errs = settled.map((r, i) => (r.status === 'rejected' ? explain(r.reason, ['Tripadvisor', 'Super.com'][i]) : null)).filter(Boolean);
-    panel.innerHTML = priceTable(h.offers) + (errs.length ? `<div class="note">${esc(errs.join(' '))}</div>` : '');
+    panel.innerHTML = priceTable(h.offers, h) + (errs.length ? `<div class="note">${esc(errs.join(' '))}</div>` : '');
     btn.textContent = `Compare sites (${h.offers.length})`;
     btn.disabled = false;
     snapshot(h, S.stay);

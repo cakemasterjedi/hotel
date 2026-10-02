@@ -88,6 +88,7 @@ On a VPS, `docker-compose.yml` runs the app behind Caddy with automatic HTTPS: s
 | Booking.com | Booking.com's public MCP server | No | ~10 hotels per call, so the app asks for 4 price bands |
 | Tripadvisor | Tripadvisor's public MCP server | No | 30 hotels with a partner price (Expedia, Hotels.com, Agoda…); "Compare sites" lists every partner and pulls 10 recent reviews |
 | Google Hotels | [SerpApi](https://serpapi.com) | `SERPAPI_KEY` | Google's price comparison plus more reviews |
+| Priceline | via Google Hotels and Tripadvisor partners | for most prices, `SERPAPI_KEY` | Priceline has no public API or connector. Its prices show up when Google Hotels (usually) or Tripadvisor (rarely) lists them; otherwise "Compare all sites" has a "Find →" link to the hotel on Priceline |
 
 The first three are the same public endpoints those companies run for AI assistants like Claude. They're free, but they're **best-effort**. They have bot protection that can block a server that sends too many requests, and they could change without notice. The app spreads its requests out, caches results for 6 hours (reviews for 14 days), and keeps working with whichever sites answer; a site that fails is marked "unavailable". Booking.com blocks some cloud/datacenter IPs, which usually isn't a problem on a home connection. Each site reports taxes differently, so the price table says which prices include tax.
 

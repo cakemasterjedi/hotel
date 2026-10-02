@@ -153,3 +153,11 @@ test('collects Tripadvisor photos in usable sizes, hotel photos before guest pho
   assert.match(d.photos[0].full, /w=1200&h=800/);
   assert.equal(d.photos[0].caption, 'Pool');
 });
+
+test('finds a Priceline price or links to the hotel on Priceline', async () => {
+  const { pricelineOffer, pricelineSearchLink } = await import('../src/shared/merge.js');
+  assert.equal(pricelineOffer({ offers: [{ source: 'Expedia' }, { source: 'Priceline', nightly: 90 }] }).nightly, 90);
+  assert.equal(pricelineOffer({ offers: [{ source: 'Expedia' }] }), null);
+  const link = pricelineSearchLink({ name: 'Comfort Inn Independence', city: 'Independence' });
+  assert.equal(decodeURIComponent(new URL(link).searchParams.get('q')), 'site:priceline.com Comfort Inn Independence Independence');
+});

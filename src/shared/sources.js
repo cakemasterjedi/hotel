@@ -66,7 +66,10 @@ export async function searchBooking(call, stay) {
   const base = {
     checkin_date: stay.checkIn,
     checkout_date: stay.checkOut,
-    destination: stay.q,
+    // `near` searches a radius around a point instead of a place name.
+    ...(stay.near
+      ? { coordinates: { latitude: stay.near.lat, longitude: stay.near.lng, radius: Math.min(200, stay.near.radiusKm || 25) } }
+      : { destination: stay.q }),
     number_of_adults: Number(stay.adults) || 2,
     number_of_rooms: 1,
     user_country_code: 'us',
@@ -77,6 +80,8 @@ export async function searchBooking(call, stay) {
   if (ages.length) base.children_ages = ages;
   const results = await Promise.allSettled(BOOKING_BANDS.map((price) => call('accommodations_search', price ? { ...base, price } : base)));
   const ok = results.filter((r) => r.status === 'fulfilled');
+  // Booking.com reports "nothing found" as an error; that just means zero hotels.
+  if (!ok.length && results.every((r) => /not_found|No accommodations found/i.test(String(r.reason?.message || r.reason)))) return [];
   if (!ok.length) throw results[0].reason;
   const seen = new Set();
   const out = [];
@@ -120,8 +125,10 @@ const taLink = (u) => (!u ? null : u.startsWith('http') ? u : TA_BASE + u);
 const partnerFromUrl = (u) => {
   const m = /[?&]p=([^&]+)/.exec(u || '');
   if (!m) return null;
-  const p = decodeURIComponent(m[1]).replace(/Images$|Hotels$/, '');
-  return /\./.test(p) ? p : p.replace(/([a-z])([A-Z])/g, '$1 $2');
+  const p = decodeURIComponent(m[1]).replace(/Images$/, '');
+  if (/\./.test(p)) return p;
+  if (/Com$/.test(p)) return `${p.slice(0, -3)}.com`; // BookingCom → Booking.com
+  return p.replace(/Hotels$/, '').replace(/([a-z])([A-Z])/g, '$1 $2');
 };
 
 function taContext(version) {

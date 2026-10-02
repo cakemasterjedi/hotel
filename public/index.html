@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hotel Hunter</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏨</text></svg>">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#11141a">
+  <script>try { if (localStorage.getItem('hh-theme') === '"light"') document.documentElement.dataset.theme = 'light'; } catch {}</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,6 +17,7 @@
       <nav>
         <button class="tab active" data-tab="search">Search</button>
         <button class="tab" data-tab="watch">Watchlist <span id="watch-count" class="count"></span></button>
+        <button id="theme" class="theme-toggle" type="button" aria-label="Switch to light mode" title="Switch light/dark">☀️</button>
       </nav>
     </div>
   </header>

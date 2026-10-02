@@ -5,37 +5,14 @@
 <style>
 /* Layout: one narrow column built for a phone held in one hand; search sheet on top, results as a stack of "pool tile" cards. */
 :root {
-  --bg: #eef4f5;
-  --surface: #ffffff;
-  --ink: #142028;
-  --muted: #5b6b74;
-  --line: #d5e1e4;
-  --water: #0b7a8a;          /* accent: pool-water teal */
-  --water-soft: #d9f0f2;
-  --water-ink: #ffffff;
-  --sun: #b4570f;            /* warm accent for "heated" */
-  --sun-soft: #fbe9da;
-  --good: #1d7a45; --good-soft: #def3e6;
-  --bad: #b23a30;  --bad-soft: #fbe3e0;
-  --warn: #8a6200; --warn-soft: #fbf0d3;
-  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --radius: 14px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0c1518; --surface: #13222a; --ink: #e4eef0; --muted: #93a7ae; --line: #24363e;
-    --water: #3cc3d1; --water-soft: #12333a; --water-ink: #06161a;
-    --sun: #f39b52; --sun-soft: #3a2616;
-    --good: #6fd69a; --good-soft: #15301f; --bad: #ff8e83; --bad-soft: #3a1c19; --warn: #f0c35b; --warn-soft: #362b12;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
+  /* Committed to a dark "night swim" look: deep blue-green water, teal and amber lights. */
   --bg: #0c1518; --surface: #13222a; --ink: #e4eef0; --muted: #93a7ae; --line: #24363e;
   --water: #3cc3d1; --water-soft: #12333a; --water-ink: #06161a;
   --sun: #f39b52; --sun-soft: #3a2616;
   --good: #6fd69a; --good-soft: #15301f; --bad: #ff8e83; --bad-soft: #3a1c19; --warn: #f0c35b; --warn-soft: #362b12;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 14px;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }

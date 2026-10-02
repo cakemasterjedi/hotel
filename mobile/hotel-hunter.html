@@ -5,37 +5,14 @@
 <style>
 /* Layout: one narrow column built for a phone held in one hand; search sheet on top, results as a stack of "pool tile" cards. */
 :root {
-  --bg: #eef4f5;
-  --surface: #ffffff;
-  --ink: #142028;
-  --muted: #5b6b74;
-  --line: #d5e1e4;
-  --water: #0b7a8a;          /* accent: pool-water teal */
-  --water-soft: #d9f0f2;
-  --water-ink: #ffffff;
-  --sun: #b4570f;            /* warm accent for "heated" */
-  --sun-soft: #fbe9da;
-  --good: #1d7a45; --good-soft: #def3e6;
-  --bad: #b23a30;  --bad-soft: #fbe3e0;
-  --warn: #8a6200; --warn-soft: #fbf0d3;
-  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --radius: 14px;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0c1518; --surface: #13222a; --ink: #e4eef0; --muted: #93a7ae; --line: #24363e;
-    --water: #3cc3d1; --water-soft: #12333a; --water-ink: #06161a;
-    --sun: #f39b52; --sun-soft: #3a2616;
-    --good: #6fd69a; --good-soft: #15301f; --bad: #ff8e83; --bad-soft: #3a1c19; --warn: #f0c35b; --warn-soft: #362b12;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
+  /* Committed to a dark "night swim" look: deep blue-green water, teal and amber lights. */
   --bg: #0c1518; --surface: #13222a; --ink: #e4eef0; --muted: #93a7ae; --line: #24363e;
   --water: #3cc3d1; --water-soft: #12333a; --water-ink: #06161a;
   --sun: #f39b52; --sun-soft: #3a2616;
   --good: #6fd69a; --good-soft: #15301f; --bad: #ff8e83; --bad-soft: #3a1c19; --warn: #f0c35b; --warn-soft: #362b12;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 14px;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -452,7 +429,10 @@ async function searchBooking(call, stay) {
   const base = {
     checkin_date: stay.checkIn,
     checkout_date: stay.checkOut,
-    destination: stay.q,
+    // `near` searches a radius around a point instead of a place name.
+    ...(stay.near
+      ? { coordinates: { latitude: stay.near.lat, longitude: stay.near.lng, radius: Math.min(200, stay.near.radiusKm || 25) } }
+      : { destination: stay.q }),
     number_of_adults: Number(stay.adults) || 2,
     number_of_rooms: 1,
     user_country_code: 'us',
@@ -463,6 +443,8 @@ async function searchBooking(call, stay) {
   if (ages.length) base.children_ages = ages;
   const results = await Promise.allSettled(BOOKING_BANDS.map((price) => call('accommodations_search', price ? { ...base, price } : base)));
   const ok = results.filter((r) => r.status === 'fulfilled');
+  // Booking.com reports "nothing found" as an error; that just means zero hotels.
+  if (!ok.length && results.every((r) => /not_found|No accommodations found/i.test(String(r.reason?.message || r.reason)))) return [];
   if (!ok.length) throw results[0].reason;
   const seen = new Set();
   const out = [];
@@ -506,8 +488,10 @@ const taLink = (u) => (!u ? null : u.startsWith('http') ? u : TA_BASE + u);
 const partnerFromUrl = (u) => {
   const m = /[?&]p=([^&]+)/.exec(u || '');
   if (!m) return null;
-  const p = decodeURIComponent(m[1]).replace(/Images$|Hotels$/, '');
-  return /\./.test(p) ? p : p.replace(/([a-z])([A-Z])/g, '$1 $2');
+  const p = decodeURIComponent(m[1]).replace(/Images$/, '');
+  if (/\./.test(p)) return p;
+  if (/Com$/.test(p)) return `${p.slice(0, -3)}.com`; // BookingCom → Booking.com
+  return p.replace(/Hotels$/, '').replace(/([a-z])([A-Z])/g, '$1 $2');
 };
 
 function taContext(version) {

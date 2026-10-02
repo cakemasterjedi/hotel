@@ -9,6 +9,8 @@ A self-hosted web app that finds the cheapest hotel rates across booking sites:
 - **Distance** from your location (📍) or any city/address you type, with sort by distance and a max-distance limit
 - **"Is the pool heated?"** reads recent guest reviews ("pool was freezing", "84 degrees", "hot tub lukewarm"…), asks Booking.com's hotel Q&A, and shows the quotes it based the answer on
 - **"If you wait"** estimate: how high the price could go tomorrow and in a week, the chance it rises, and a book-now / can-wait suggestion
+- **Dark mode** by default (☀️ button for light)
+- **Weekend deal alerts**: checks the next 4 weekends near you and lists hotels priced well below their usual weekend rate
 - **Watchlist** re-prices stays automatically and builds price history, which makes the forecast better over time
 
 ## Use it on your phone right now
@@ -24,9 +26,7 @@ The phone page has everything except the watchlist. Its forecast history stays o
 
 Works on TrueNAS SCALE 24.10 (Electric Eel) or newer, where apps run on Docker.
 
-**1. Get the image.** Every push to this repo builds `ghcr.io/cakemasterjedi/hotel:latest` with GitHub Actions (`.github/workflows/docker.yml`). The repo is private, so the image is private too. Pick one:
-- **Make the image public** (easiest): GitHub → your profile → **Packages** → `hotel` → **Package settings** → **Change visibility** → Public. The code stays private; only the built app image becomes downloadable.
-- **Or keep it private** and add a registry login in TrueNAS: create a GitHub personal access token (classic) with `read:packages`, then in TrueNAS go to **Apps → Configuration → Manage Container Images / Docker Registries** (the name differs by version) and add `ghcr.io` with your GitHub username and the token.
+**1. Get the image.** Every push to this repo builds `ghcr.io/cakemasterjedi/hotel:latest` with GitHub Actions (`.github/workflows/docker.yml`). The package must be public so TrueNAS can download it without a login. If a pull fails with "unauthorized", go to GitHub → your profile → **Packages** → `hotel` → **Package settings** → **Change visibility** → Public.
 
 **2. Make a dataset** for the app's data, e.g. `tank/apps/hotel-hunter`. In its permissions, give the **apps** user (UID 568) read/write access.
 
@@ -50,6 +50,21 @@ The simplest option for a home server is a **Cloudflare Tunnel**. You don't open
 Prefer a reverse proxy instead? Point Nginx Proxy Manager (or the TrueNAS catalog's Traefik/Caddy apps) at `http://<truenas-ip>:8095`.
 
 "📍 My location" in the browser only works over HTTPS. On plain `http://<ip>:8095`, type your city instead.
+
+## Weekend deal alerts
+
+`npm run deals` checks the next 4 weekends (Friday + Saturday night) near a place and prints the deals it finds:
+
+```bash
+npm run deals -- --origin "Maple Heights, OH" --areas "Maple Heights, OH|Cleveland, OH" \
+  --radius 20 --history data/weekend-history.json
+```
+
+- **What counts as a deal:** a hotel's weekend price that is at least 15% below its usual weekend price (`--threshold 0.15`), or the cheapest pool / hot-tub hotel for a weekend hitting a new low. "Usual" is the median of that hotel's other weekend prices, from this scan and from earlier scans saved in the `--history` file.
+- **What you get:** hotels with a pool or hot tub are listed first. The message also says when a whole weekend is cheaper than the others. A deal that was already reported isn't repeated unless its price drops further.
+- **Where it searches:** `--areas` lists the place names to search (a small suburb alone has few hotels). Booking.com searches a radius around `--origin`, and anything farther than `--radius` miles is dropped.
+
+A full scan takes about 4 minutes, because it spaces out its requests to the sites.
 
 ## Run it anywhere else
 

@@ -100,3 +100,9 @@ test('haversine distance is sane', () => {
   const km = haversineKm({ lat: 33.4152, lng: -111.8315 }, { lat: 33.4942, lng: -111.9261 }); // Mesa → Scottsdale
   assert.ok(km > 10 && km < 15, String(km));
 });
+
+test('turns Tripadvisor partner codes into site names', async () => {
+  const fake = { hotels: [{ hotelId: 1, hotelName: 'X', metaResult: { primaryOffers: [{ displayPrice: '$200', commerceUrl: '/Commerce?p=BookingCom&x=1' }] } }] };
+  const { listings } = await searchTripadvisor(async () => fake, stay, {});
+  assert.equal(listings[0].offers[0].source, 'Booking.com');
+});

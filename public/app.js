@@ -21,6 +21,22 @@ async function api(path, body) {
   return data;
 }
 
+// ---------- theme (dark by default) ----------
+function applyTheme(theme) {
+  if (theme === 'light') document.documentElement.dataset.theme = 'light';
+  else delete document.documentElement.dataset.theme;
+  const btn = $('#theme');
+  btn.textContent = theme === 'light' ? '🌙' : '☀️';
+  btn.setAttribute('aria-label', theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode');
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', theme === 'light' ? '#ffffff' : '#11141a');
+}
+applyTheme(store.get('theme', 'dark'));
+$('#theme').addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  store.set('theme', next);
+  applyTheme(next);
+});
+
 // ---------- setup ----------
 const form = $('#search-form');
 const iso = (d) => d.toISOString().slice(0, 10);

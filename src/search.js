@@ -34,38 +34,51 @@ export function activeSources() {
   ];
 }
 
-export async function searchAll(stay) {
-  const nights = nightsBetween(stay.checkIn, stay.checkOut);
-  const jobs = {};
-  if (enabled('super')) jobs.super = searchSuper(callFor('super', 90_000), stay);
-  if (enabled('booking')) jobs.booking = searchBooking(callFor('booking'), stay);
-  if (enabled('tripadvisor')) {
-    jobs.tripadvisor = tripadvisorVersionLive().then((version) => searchTripadvisor(callFor('tripadvisor', 45_000), stay, { version }));
-  }
-  if (enabled('google')) jobs.google = google.searchGoogle(stay);
+export function searchAll(stay) {
+  return searchArea(stay, { areas: [stay.q] });
+}
 
-  const ids = Object.keys(jobs);
-  const settled = await Promise.allSettled(Object.values(jobs));
+// Searches one or more place names (e.g. a suburb plus the nearby city) and,
+// when `near` is given, Booking.com by radius around that point instead.
+export async function searchArea(stay, { areas, near = null }) {
+  const nights = nightsBetween(stay.checkIn, stay.checkOut);
+  const jobs = [];
+  for (const q of areas) {
+    const s = { ...stay, q };
+    if (enabled('super')) jobs.push(['super', searchSuper(callFor('super', 90_000), s)]);
+    if (enabled('tripadvisor')) {
+      jobs.push(['tripadvisor', tripadvisorVersionLive().then((version) => searchTripadvisor(callFor('tripadvisor', 45_000), s, { version }))]);
+    }
+    if (enabled('google')) jobs.push(['google', google.searchGoogle(s)]);
+  }
+  if (enabled('booking')) jobs.push(['booking', searchBooking(callFor('booking'), near ? { ...stay, near } : { ...stay, q: areas[0] })]);
+
+  const settled = await Promise.allSettled(jobs.map(([, p]) => p));
   const listings = [];
-  const status = [];
+  const byId = {};
   let center = null;
   settled.forEach((r, i) => {
-    const id = ids[i];
-    const label = SOURCE_INFO[id]?.label || 'Google Hotels';
-    if (r.status === 'rejected') {
-      status.push({ id, label, ok: false, error: String(r.reason?.message || r.reason).slice(0, 200) });
-      return;
-    }
+    const id = jobs[i][0];
+    const entry = (byId[id] ||= { id, label: SOURCE_INFO[id]?.label || 'Google Hotels', ok: false, count: 0, errors: [] });
+    if (r.status === 'rejected') { entry.errors.push(String(r.reason?.message || r.reason).slice(0, 200)); return; }
     const value = id === 'tripadvisor' ? r.value.listings : r.value;
-    if (id === 'tripadvisor') center = r.value.center;
+    if (id === 'tripadvisor' && !center) center = r.value.center;
     listings.push(...value);
-    status.push({ id, label, ok: true, count: value.length });
+    entry.ok = true;
+    entry.count += value.length;
   });
+  const status = Object.values(byId).map(({ errors, ...e }) => (e.ok ? e : { ...e, error: errors[0] }));
   if (!listings.length && status.every((s) => !s.ok)) {
     throw Object.assign(new Error(`No site answered: ${status.map((s) => `${s.label}: ${s.error}`).join('; ')}`), { status: 502 });
   }
-  if (!center && !config.demo) center = await geocode(stay.q);
-  const hotels = merge(listings, nights).filter((h) => h.best);
+  if (!center && !config.demo) center = await geocode(areas[0]);
+  // The same hotel can come back from several area searches on one site.
+  const seen = new Set();
+  const unique = listings.filter((l) => {
+    const k = `${l.source}|${l.name}`;
+    return !seen.has(k) && seen.add(k);
+  });
+  const hotels = merge(unique, nights).filter((h) => h.best);
   return { hotels, status, center };
 }
 

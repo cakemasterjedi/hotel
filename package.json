@@ -11,7 +11,8 @@
     "start": "node --no-warnings src/server.js",
     "dev": "node --no-warnings --watch src/server.js",
     "test": "node --no-warnings --test test/*.test.js",
-    "build:mobile": "node scripts/build-mobile.js"
+    "build:mobile": "node scripts/build-mobile.js",
+    "deals": "node --no-warnings scripts/weekend-deals.js"
   },
   "dependencies": {
     "express": "^4.21.2"
